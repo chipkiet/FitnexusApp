@@ -1,0 +1,17 @@
+{
+  "name": "fitnexusapp",
+  "version": "1.0.0",
+  "description": "Monorepo for the Fitnexus application",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm install",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
