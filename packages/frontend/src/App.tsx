@@ -1,8 +1,24 @@
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+
 function App() {
+    const [message, setMessage] = useState('Loading...')
+
+    useEffect(() => {
+        // Test connection to backend
+        axios.get('http://localhost:3001')
+            .then(response => {
+                setMessage(response.data.message)
+            })
+            .catch(error => {
+                setMessage('Error connecting to backend: ' + error.message)
+            })
+    }, [])
+
     return (
-        <div className="flex h-screen items-center justify-center bg-slate-800">
+        <div className="flex items-center justify-center h-screen bg-slate-800">
             <h1 className="text-3xl font-bold text-sky-400">
-                Fitnexus Frontend Setup Complete!
+                {message}
             </h1>
         </div>
     )
