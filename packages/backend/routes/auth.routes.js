@@ -1,17 +1,10 @@
 import express from 'express';
+import { register } from '../controllers/auth.controller.js';
+import { registerValidation } from '../middleware/auth.validation.js';
+
 const router = express.Router();
 
-// Basic routes for authentication
-router.post('/register', (req, res) => {
-    res.json({ message: 'Register endpoint' });
-});
-
-router.post('/login', (req, res) => {
-    res.json({ message: 'Login endpoint' });
-});
-
-router.post('/logout', (req, res) => {
-    res.json({ message: 'Logout endpoint' });
-});
+// POST /api/auth/register
+router.post('/register', registerValidation, register);
 
 export default router;
