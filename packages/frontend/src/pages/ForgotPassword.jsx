@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import loginImg from "../assets/login.png";
+import forgotImg from "../assets/forgot.png";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
 
@@ -63,7 +63,7 @@ export default function ForgotPassword() {
 
         {/* Ảnh minh họa */}
         <div className="w-1/2 flex items-center justify-center">
-          <img src={loginImg} alt="Forgot Password Illustration" className="w-3/4" />
+          <img src={forgotImg} alt="Forgot Password Illustration" className="w-3/4" />
         </div>
       </div>
     </div>
