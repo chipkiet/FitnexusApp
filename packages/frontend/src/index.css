@@ -1,3 +1,50 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .floating-card {
+    @apply relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/10 backdrop-blur-xl shadow-[0_35px_80px_-25px_rgba(15,23,42,0.7)];
+  }
+
+  .floating-card::before {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    background: radial-gradient(circle at top, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0));
+    opacity: 0.55;
+    filter: blur(80px);
+    z-index: 0;
+  }
+
+  .floating-card > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@keyframes float-soft {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-18px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@layer utilities {
+  .animate-float-soft {
+    animation: float-soft 8s ease-in-out infinite;
+  }
+
+  .perspective-1200 {
+    perspective: 1200px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+}
