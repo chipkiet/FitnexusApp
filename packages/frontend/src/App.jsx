@@ -9,7 +9,7 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import VerifyCode from "./pages/VerifyCode.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 
-// Component bảo vệ route
+
 function PrivateRoute({ children }) {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" replace />;
@@ -27,7 +27,7 @@ function App() {
           <Route path="/verify-code" element={<VerifyCode />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Route cần login */}
+       
           <Route
             path="/dashboard"
             element={
@@ -37,7 +37,7 @@ function App() {
             }
           />
 
-          {/* Redirect */}
+         
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

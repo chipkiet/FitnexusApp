@@ -18,7 +18,7 @@ export default function ForgotPassword() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="flex w-full max-w-4xl p-8 bg-white shadow-xl rounded-xl">
         
-        {/* Form bên trái */}
+ 
         <div className="w-1/2 pr-8">
         <h1 className="text-xl font-semibold text-gray-800 mb-6">Your Logo</h1>
           <h2 className="text-2xl font-bold text-gray-800 text-center">Forgot your password?</h2>
@@ -40,14 +40,14 @@ export default function ForgotPassword() {
             </button>
           </form>
 
-          {/* Divider */}
+      
           <div className="flex items-center my-6">
             <hr className="flex-grow border-gray-300" />
             <span className="mx-2 text-sm text-gray-500">or continue with</span>
             <hr className="flex-grow border-gray-300" />
           </div>
 
-          {/* Social login buttons */}
+     
           <div className="flex gap-3">
             <button className="flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg hover:bg-gray-50">
               <FcGoogle size={20} /> Google
@@ -61,7 +61,7 @@ export default function ForgotPassword() {
           </div>
         </div>
 
-        {/* Ảnh minh họa */}
+      
         <div className="w-1/2 flex items-center justify-center">
           <img src={forgotImg} alt="Forgot Password Illustration" className="w-3/4" />
         </div>

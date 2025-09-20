@@ -7,8 +7,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // đơn giản: clear localStorage / context
-    // ở đây giả sử user được set null khi logout
+
     window.location.href = "/login";
   };
 
@@ -23,7 +22,6 @@ export default function Dashboard() {
       )}
 
       <div className="flex gap-4">
-        {/* Nếu bạn muốn giữ nút đi tới Register để test thì để lại */}
         <button
           onClick={() => navigate("/register")}
           className="px-6 py-3 text-white rounded-lg bg-sky-500 hover:bg-sky-600 transition"
@@ -31,7 +29,6 @@ export default function Dashboard() {
           Register
         </button>
 
-        {/* Nút logout */}
         <button
           onClick={handleLogout}
           className="px-6 py-3 text-white rounded-lg bg-red-500 hover:bg-red-600 transition"

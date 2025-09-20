@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import forgotImg from "../assets/forgot.png"; // dùng lại ảnh forgot (login)
+import forgotImg from "../assets/forgot.png";
 
 export default function ResetPassword() {
   const [form, setForm] = useState({
@@ -30,7 +30,7 @@ export default function ResetPassword() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="flex w-full max-w-4xl p-8 bg-white shadow-xl rounded-xl">
         
-        {/* Form bên trái */}
+      
         <div className="w-1/2 pr-8">
         <h1 className="text-xl font-semibold text-gray-800 mb-6">Your Logo</h1>
           <h2 className="text-2xl font-bold text-gray-800">Set New Password</h2>
@@ -67,7 +67,7 @@ export default function ResetPassword() {
           </form>
         </div>
 
-        {/* Ảnh minh họa bên phải */}
+        
         <div className="w-1/2 flex items-center justify-center">
           <img src={forgotImg} alt="Reset Password Illustration" className="w-3/4" />
         </div>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import SignUpImg from "../assets/image 2.png"; // Đúng tên biến
+import SignUpImg from "../assets/image 2.png"; 
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
 
@@ -43,7 +43,7 @@ export default function Register() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="flex w-full max-w-5xl p-8 bg-white shadow-xl rounded-xl">
         
-        {/* Logo bên trái */}
+       
         <div className="w-1/2 flex flex-col items-center justify-center -mt-6">
           <img
             src={SignUpImg}
@@ -55,7 +55,7 @@ export default function Register() {
           </h1>
         </div>
 
-        {/* Form bên phải */}
+   
         <div className="w-1/2 pl-8">
           <h2 className="text-3xl font-bold text-gray-800 mb-2">Sign up</h2>
           <p className="text-gray-500 mb-6">
@@ -122,7 +122,7 @@ export default function Register() {
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
 
-            {/* Checkbox */}
+            
             <div className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
