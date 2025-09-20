@@ -10,7 +10,7 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/health" element={<HealthStatus />} />
+          <Route path="/health" element={<HealthStatus />} /> 
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
