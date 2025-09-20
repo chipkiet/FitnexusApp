@@ -1,27 +1,24 @@
-import { useEffect, useState } from 'react'
-import axios from 'axios'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/auth.context.jsx';
+import HealthStatus from './components/HealthStatus.jsx';
+import Register from './pages/Register.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 
 function App() {
-    const [message, setMessage] = useState('Loading...')
-
-    useEffect(() => {
-        // Test connection to backend
-        axios.get('http://localhost:3001')
-            .then(response => {
-                setMessage(response.data.message)
-            })
-            .catch(error => {
-                setMessage('Error connecting to backend: ' + error.message)
-            })
-    }, [])
-
-    return (
-        <div className="flex items-center justify-center h-screen bg-slate-800">
-            <h1 className="text-3xl font-bold text-sky-400">
-                {message}
-            </h1>
-        </div>
-    )
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/health" element={<HealthStatus />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
