@@ -59,7 +59,7 @@ function App() {
                                     Giải pháp tập luyện toàn diện
                                 </div>
                                 <h2 className="text-4xl font-bold leading-tight text-white md:text-5xl">
-                                    Chinh phục mục tiêu hình thể với <span className="text-transparent bg-gradient-to-r from-sky-400 via-cyan-300 to-emerald-300 bg-clip-text">đảo năng lượng</span> FitNexus
+                                    Chinh phục mục tiêu hình thể với <span className="text-transparent bg-gradient-to-r from-sky-400 via-cyan-300 to-emerald-300 bg-clip-text">FitNexus</span> 
                                 </h2>
                                 <p className="max-w-xl text-base text-slate-300 md:text-lg">
                                     Tăng tốc hành trình thay đổi bản thân với lịch tập cá nhân hoá, huấn luyện viên A.I và báo cáo tiến độ trực quan. Trải nghiệm không gian tập luyện sáng tạo.
