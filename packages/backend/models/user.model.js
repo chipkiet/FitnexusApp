@@ -1,5 +1,6 @@
 import { DataTypes, Sequelize } from "sequelize";
 import { sequelize } from "../config/database.js"; 
+import bcrypt from 'bcrypt';
 
 const User = sequelize.define('User', {
     user_id: {
@@ -54,12 +55,12 @@ const User = sequelize.define('User', {
     role: {
         type: DataTypes.ENUM('USER', 'ADMIN'),
         allowNull: false,
-        defaultValue: 'user',
+        defaultValue: 'USER',
     },
     status: {
         type: DataTypes.ENUM('ACTIVE', 'INACTIVE', 'BANNED'),
         allowNull: false,
-        defaultValue: 'active',
+        defaultValue: 'ACTIVE',
     },
     lastLoginAt: {
         type: DataTypes.DATE,
@@ -72,7 +73,38 @@ const User = sequelize.define('User', {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     // Hooks để băm mật khẩu (sẽ thêm sau)
-    hooks: {}
+    hooks: {
+        beforeCreate: async(user) => {
+            if(user.passwordHash) {
+                const saltRounds = 12;
+                user.passwordHash = await bcrypt.hash(user.passwordHash, saltRounds);
+
+            }
+        },
+
+        //Hash password truoc khi update password  (neu co change pass)
+        beforeUpdate: async(user) => {
+            if(user.changed('passwordHash') && user.passwordHash) {
+                const saltRounds = 12;
+                user.passwordHash = await bcrypt.hash(user.passwordHash, saltRounds);
+            }
+        }
+    }
 });
+
+// Instance method 
+User.prototype.comparePassword = async function(candidatePassword) {
+    if(!this.passwordHash ) return false;
+    return bcrypt.compare(candidatePassword, this.passwordHash);
+}
+
+// Static method
+User.findByEmail = function(email) {
+    return this.findOne({where : {email}});
+}
+
+User.findByUsername = function(username) {
+    return this.findOne({where: {username}});
+}
 
 export default User;
