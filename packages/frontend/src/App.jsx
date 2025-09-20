@@ -6,10 +6,10 @@ const navItems = [
 ]
 
 const stats = [
-    { label: 'Thành viên năng động', value: '12K+' },
-    { label: 'Buổi tập đã hoàn thành', value: '85K+' },
-    { label: 'Huấn luyện viên chuyên nghiệp', value: '48' },
-    { label: 'Trung tâm liên kết', value: '32' }
+    { label: 'Thành viên năng động', value: 'xxK+' },
+    { label: 'Buổi tập đã hoàn thành', value: 'xxK+' },
+    { label: 'Huấn luyện viên chuyên nghiệp', value: 'xx' },
+    { label: 'Trung tâm liên kết', value: 'xx' }
 ]
 
 function App() {
@@ -62,7 +62,7 @@ function App() {
                                     Chinh phục mục tiêu hình thể với <span className="text-transparent bg-gradient-to-r from-sky-400 via-cyan-300 to-emerald-300 bg-clip-text">đảo năng lượng</span> FitNexus
                                 </h2>
                                 <p className="max-w-xl text-base text-slate-300 md:text-lg">
-                                    Tăng tốc hành trình thay đổi bản thân với lịch tập cá nhân hoá, huấn luyện viên ảo và báo cáo tiến độ trực quan. Trải nghiệm không gian tập luyện sáng tạo như đang phiêu lưu giữa những hòn đảo năng lượng.
+                                    Tăng tốc hành trình thay đổi bản thân với lịch tập cá nhân hoá, huấn luyện viên A.I và báo cáo tiến độ trực quan. Trải nghiệm không gian tập luyện sáng tạo.
                                 </p>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     {stats.map(stat => (
@@ -119,23 +119,23 @@ function App() {
                         <div className="grid gap-10 lg:grid-cols-[0.85fr,1.15fr] lg:items-center">
                             <div className="space-y-6">
                                 <h3 className="text-3xl font-semibold text-white md:text-4xl">
-                                    Khám phá hòn đảo 3D của huấn luyện viên ảo
+                                    Khám phá model 3D trực quan
                                 </h3>
                                 <p className="text-base text-slate-300 md:text-lg">
-                                    Mô hình 3D trực quan hoá các động tác chuẩn xác, phân tích tư thế theo thời gian thực và đưa ra gợi ý điều chỉnh ngay lập tức. Trải nghiệm cảm giác luyện tập như đang tương tác cùng huấn luyện viên cá nhân trong không gian thực tế ảo.
+                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis atque ipsum illum corrupti commodi earum voluptatem? Nisi, rem aspernatur veniam unde ab veritatis autem sequi odit quisquam, libero, voluptas sint.
                                 </p>
                                 <ul className="space-y-3 text-sm text-slate-200 md:text-base">
                                     <li className="flex items-center gap-3">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/30 text-sky-200">1</span>
-                                        Theo dõi chuyển động 360° với hình ảnh cắt lớp rõ nét
+                                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Corrupti eos ex, nostrum iure ipsum eligendi dolores, delectus impedit libero, maiores tempore fuga quis tenetur! Culpa qui nemo corrupti facere ea.
                                     </li>
                                     <li className="flex items-center gap-3">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/30 text-sky-200">2</span>
-                                        Nhận cảnh báo tư thế thông minh giúp phòng tránh chấn thương
+                                        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Non obcaecati laboriosam recusandae placeat minus illo asperiores sed dolorem, magni eos iste ut assumenda molestiae consectetur mollitia in ab, repellat corporis.
                                     </li>
                                     <li className="flex items-center gap-3">
                                         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/30 text-sky-200">3</span>
-                                        Đồng bộ tiến độ và dinh dưỡng trên mọi thiết bị
+                                        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Debitis, non totam sequi laborum iste laboriosam dolorem sunt illo quos reiciendis nesciunt temporibus soluta optio ad dolore asperiores quisquam sed suscipit.
                                     </li>
                                 </ul>
                             </div>
