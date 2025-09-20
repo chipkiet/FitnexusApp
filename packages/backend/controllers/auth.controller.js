@@ -2,7 +2,7 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { Op } from "sequelize";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 
 // Tạo JWT token
 const generateToken = (userId, role) => {
@@ -46,13 +46,10 @@ export const register = async (req, res) => {
       });
     }
 
-    // Hash password
-    const hashed = await bcrypt.hash(password, 10);
-
     const newUser = await User.create({
       username,
       email,
-      passwordHash: hashed,
+      passwordHash: password,
       fullName: fullName || null,
       provider: "local",
       status: "ACTIVE",
@@ -100,6 +97,14 @@ export const login = async (req, res) => {
       });
     }
 
+    // Nếu tài khoản không có passwordHash (tài khoản social hoặc dữ liệu cũ), coi như invalid
+    if (!user.passwordHash) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
     const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) {
       return res.status(401).json({
@@ -120,7 +125,7 @@ export const login = async (req, res) => {
 
     const token = generateToken(user.user_id, user.role);
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       message: "Login successful",
       data: {
@@ -128,6 +133,8 @@ export const login = async (req, res) => {
         token,
       },
     });
+
+
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({
