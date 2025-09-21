@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/auth.context.jsx";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-
-    window.location.href = "/login";
+    logout();
+    navigate("/login", { replace: true });
   };
 
   return (

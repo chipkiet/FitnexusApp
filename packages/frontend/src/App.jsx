@@ -8,11 +8,15 @@ import Login from "./pages/Login.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import VerifyCode from "./pages/VerifyCode.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
+import DashboardPreview from "./pages/DashboardPreview.jsx";
 
 
 function PrivateRoute({ children }) {
-  const { user } = useAuth();
-  return user ? children : <Navigate to="/login" replace />;
+  const { user, token, loading } = useAuth();
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+  return user || token ? children : <Navigate to="/login" replace />;
 }
 
 function App() {
@@ -38,8 +42,8 @@ function App() {
           />
 
          
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<DashboardPreview />} />
+          <Route path="*" element={<DashboardPreview />} />
         </Routes>
       </Router>
     </AuthProvider>

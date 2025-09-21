@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api, { endpoints } from "../lib/api.js";
 
 const AuthContext = createContext(null);
@@ -8,6 +8,24 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Bootstrap session from localStorage token and fetch profile
+  useEffect(() => {
+    const saved = localStorage.getItem("token");
+    if (!saved) return;
+    setToken(saved);
+    // Fetch current user
+    api
+      .get(endpoints.auth.me)
+      .then((res) => {
+        if (res?.data?.data) setUser(res.data.data);
+      })
+      .catch(() => {
+        // token invalid → cleanup
+        localStorage.removeItem("token");
+        setToken(null);
+      });
+  }, []);
 
   const register = async (payload) => {
     setLoading(true);
@@ -54,8 +72,14 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const logout = () => {
+    localStorage.removeItem("token");
+    setToken(null);
+    setUser(null);
+  };
+
   const value = useMemo(
-    () => ({ user, token, loading, error, register, login }),
+    () => ({ user, token, loading, error, register, login, logout }),
     [user, token, loading, error]
   );
 

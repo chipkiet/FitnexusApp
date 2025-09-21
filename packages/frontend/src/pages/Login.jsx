@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/auth.context.jsx";
 import loginImg from "../assets/login.png";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
+import Alert from "../components/common/Alert.jsx";
 
 export default function Login() {
   const [form, setForm] = useState({ identifier: "", password: "", remember: false });
+  const { login, loading, error } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -13,10 +16,18 @@ export default function Login() {
     setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login data:", form);
-    navigate("/dashboard");
+    try {
+      await login({
+        identifier: form.identifier,
+        password: form.password,
+        rememberMe: form.remember,
+      });
+      navigate("/dashboard", { replace: true });
+    } catch (_) {
+      // error state is handled via context; optionally we could show local fallback
+    }
   };
 
   return (
@@ -25,10 +36,16 @@ export default function Login() {
         
        
         <div className="w-1/2 pr-8">
-          <h1 className="text-xl font-semibold text-gray-800 mb-6 text-center">Your Logo</h1>
-          <h2 className="text-2xl font-bold text-gray-800 text-center">Login</h2>
+          <h1 className="mb-6 text-xl font-semibold text-center text-gray-800">Your Logo</h1>
+          <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
 
-          <form className="space-y-4 mt-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="mt-4">
+              <Alert type="error">{error.message || "Login failed"}</Alert>
+            </div>
+          )}
+
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <input
               type="text"
               name="identifier"
@@ -67,9 +84,10 @@ export default function Login() {
             </div>
             <button
               type="submit"
-              className="w-full py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              disabled={loading}
+              className="w-full py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60"
             >
-              Login
+              {loading ? "Signing in..." : "Login"}
             </button>
           </form>
 
@@ -81,13 +99,11 @@ export default function Login() {
           </div>
 
           <div className="flex gap-3">
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg hover:bg-gray-50">
+            <button className="flex items-center justify-center flex-1 gap-2 py-2 border rounded-lg hover:bg-gray-50">
               <FcGoogle size={20} /> Google
             </button>
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg hover:bg-gray-50 text-blue-600">
-              <FaFacebook size={20} /> Facebook
-            </button>
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg hover:bg-gray-50">
+            
+            <button className="flex items-center justify-center flex-1 gap-2 py-2 border rounded-lg hover:bg-gray-50">
               <FaApple size={20} /> Apple
             </button>
           </div>
@@ -104,7 +120,7 @@ export default function Login() {
         </div>
 
      
-        <div className="w-1/2 flex items-center justify-center">
+        <div className="flex items-center justify-center w-1/2">
           <img src={loginImg} alt="Login Illustration" className="w-3/4" />
         </div>
       </div>
