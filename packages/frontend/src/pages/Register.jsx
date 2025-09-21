@@ -7,6 +7,11 @@ import Checkbox from '../components/form/Checkbox.jsx';
 import DividerWithText from '../components/common/DividerWithText.jsx';
 import SocialAuthButtons from '../components/auth/SocialAuthButtons.jsx';
 import Alert from '../components/common/Alert.jsx';
+import { validatePassword } from '../lib/passwordValidation.js';
+import { validateUsername } from '../lib/usernameValidation.js';
+import { validateFullname } from '../lib/fullnameValidation.js';
+import { validatePhone } from '../lib/phoneValidation.js';
+import { validateEmail } from '../lib/emailValidation.js';
 import logo from '../assets/branch/logo.png';
 
 export default function Register() {
@@ -30,6 +35,46 @@ export default function Register() {
     e.preventDefault();
     setSuccess(null);
     setLocalError(null);
+    
+    // Validate username
+    const usernameValidation = validateUsername(form.username);
+    if (!usernameValidation.isValid) {
+      setLocalError(usernameValidation.message);
+      return;
+    }
+    
+    // Validate password strength
+    const passwordValidation = validatePassword(form.password);
+    if (!passwordValidation.isValid) {
+      setLocalError(passwordValidation.message);
+      return;
+    }
+    
+    // Validate fullname
+    if (form.fullName) {
+      const fullnameValidation = validateFullname(form.fullName);
+      if (!fullnameValidation.isValid) {
+        setLocalError(fullnameValidation.message);
+        return;
+      }
+    }
+    
+    // Validate phone
+    if (form.phone) {
+      const phoneValidation = validatePhone(form.phone);
+      if (!phoneValidation.isValid) {
+        setLocalError(phoneValidation.message);
+        return;
+      }
+    }
+    
+    // Validate email
+    const emailValidation = validateEmail(form.email);
+    if (!emailValidation.isValid) {
+      setLocalError(emailValidation.message);
+      return;
+    }
+    
     if (!form.agree) {
       setLocalError('Bạn cần đồng ý với Điều khoản và Chính sách riêng tư.');
       return;
@@ -76,17 +121,67 @@ export default function Register() {
       {error && <div className="mt-3"><Alert type="error">{error.message || 'Registration failed'}</Alert></div>}
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <TextInput label="Username" name="username" value={form.username} onChange={onChange} placeholder="johnny" required />
+        <TextInput 
+          label="Username" 
+          name="username" 
+          value={form.username} 
+          onChange={onChange} 
+          placeholder="johnny" 
+          required 
+          showValidationIcon={true}
+          isValid={validateUsername(form.username).isValid}
+        />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TextInput label="Full Name" name="fullName" value={form.fullName} onChange={onChange} placeholder="John Doe" />
-          <TextInput label="Phone Number" name="phone" value={form.phone} onChange={onChange} placeholder="0123 456 789" />
+          <TextInput 
+            label="Full Name" 
+            name="fullName" 
+            value={form.fullName} 
+            onChange={onChange} 
+            placeholder="John Doe" 
+            showValidationIcon={true}
+            isValid={validateFullname(form.fullName).isValid}
+          />
+          <TextInput 
+            label="Phone Number" 
+            name="phone" 
+            value={form.phone} 
+            onChange={onChange} 
+            placeholder="0123 456 789" 
+            showValidationIcon={true}
+            isValid={validatePhone(form.phone).isValid}
+          />
           <div className="sm:col-span-2">
-            <TextInput label="Email" type="email" name="email" value={form.email} onChange={onChange} placeholder="john.doe@gmail.com" required />
+            <TextInput 
+              label="Email" 
+              type="email" 
+              name="email" 
+              value={form.email} 
+              onChange={onChange} 
+              placeholder="john.doe@gmail.com" 
+              required 
+              showValidationIcon={true}
+              isValid={validateEmail(form.email).isValid}
+            />
           </div>
         </div>
 
-        <PasswordInput label="Password" name="password" value={form.password} onChange={onChange} placeholder="••••••••••" required />
-        <PasswordInput label="Confirm Password" name="confirmPassword" value={form.confirmPassword} onChange={onChange} placeholder="••••••••••" required />
+        <PasswordInput 
+          label="Password" 
+          name="password" 
+          value={form.password} 
+          onChange={onChange} 
+          placeholder="••••••••••" 
+          required 
+          showStrengthIndicator={true}
+        />
+        <PasswordInput 
+          label="Confirm Password" 
+          name="confirmPassword" 
+          value={form.confirmPassword} 
+          onChange={onChange} 
+          placeholder="••••••••••" 
+          required 
+        />
 
         <div className="flex items-center justify-between">
           <Checkbox

@@ -1,7 +1,8 @@
 import React from 'react';
 import usePasswordVisibility from '../../hooks/usePasswordVisibility.js';
+import PasswordStrengthIndicator from './PasswordStrengthIndicator.jsx';
 
-export default function PasswordInput({ label, name, value, onChange, placeholder, required = false }) {
+export default function PasswordInput({ label, name, value, onChange, placeholder, required = false, showStrengthIndicator = false }) {
   const { type, visible, toggle } = usePasswordVisibility(false);
   return (
     <label className="block text-sm">
@@ -36,6 +37,7 @@ export default function PasswordInput({ label, name, value, onChange, placeholde
           )}
         </button>
       </div>
+      {showStrengthIndicator && value && <PasswordStrengthIndicator password={value} />}
     </label>
   );
 }

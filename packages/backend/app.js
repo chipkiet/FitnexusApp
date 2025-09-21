@@ -31,6 +31,8 @@ app.use(
       process.env.FRONTEND_URL || 'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:5175',
+      'http://localhost:5178',
+      'http://localhost:5179',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -88,12 +90,12 @@ app.use((err, _req, res, _next) => {
   }
   const status = err.status || 500;
   const safeMessage =
-    status === 500 && !isDev ? 'Internal server error' : err.message;
+    status === 500 && !isDev ? 'Lỗi đăng ký ở app 1' : err.message;
 
   // Đảm bảo format lỗi chuẩn
   res.status(status).json({
     success: false,
-    message: safeMessage || 'Internal server error',
+    message: safeMessage || 'Lỗi đăng ký ở app 2',
     errors: Array.isArray(err.errors) ? err.errors : [],
     ...(isDev ? { stack: err.stack } : {}),
   });

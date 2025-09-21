@@ -1,30 +1,56 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import api, { endpoints } from "../lib/api.js";
+import {
+  setToken as setTokenManager,
+  clearToken,
+  getToken as getTokenManager,
+} from "../lib/tokenManager.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);   // ✅ chờ bootstrap
   const [error, setError] = useState(null);
 
-  // Bootstrap session from localStorage token and fetch profile
+  // Bootstrap session from storage (sessionStorage/localStorage) and fetch profile
   useEffect(() => {
-    const saved = localStorage.getItem("token");
-    if (!saved) return;
+    // Ưu tiên sessionStorage, sau đó localStorage (được đóng gói trong tokenManager)
+    const saved = getTokenManager(); // sẽ chỉ lấy được token nếu remember=true
+    if (!saved) {
+      setLoading(false);
+      return;
+    }
+    const isLocal = !!localStorage.getItem("token"); // để biết có phải "remember" không
+
+    console.log("Bootstrap: Found token:", !!saved, "source:", isLocal ? "localStorage" : "sessionStorage");
+
+    if (!saved) {
+      setLoading(false);
+      return;
+    }
+
     setToken(saved);
+
+    // Cập nhật vào RAM mà KHÔNG đổi nơi lưu (remember = isLocal)
+    setTokenManager(saved, isLocal);
+
     // Fetch current user
     api
       .get(endpoints.auth.me)
       .then((res) => {
+        console.log("Bootstrap: API response:", res?.data);
         if (res?.data?.data) setUser(res.data.data);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.log("Bootstrap: API error:", err);
         // token invalid → cleanup
-        localStorage.removeItem("token");
+        clearToken();
         setToken(null);
-      });
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const register = async (payload) => {
@@ -34,7 +60,11 @@ export function AuthProvider({ children }) {
       const res = await api.post(endpoints.auth.register, payload);
       const { data } = res.data || {};
       if (data?.user) setUser(data.user);
-      if (data?.token) setToken(data.token);
+      if (data?.token) {
+        setToken(data.token);
+        // Đăng ký mặc định KHÔNG remember
+        setTokenManager(data.token, false);
+      }
       return res.data;
     } catch (err) {
       setError(err?.response?.data || { message: err.message });
@@ -53,8 +83,12 @@ export function AuthProvider({ children }) {
       if (data?.user) setUser(data.user);
       if (data?.token) {
         setToken(data.token);
+        setTokenManager(data.token, !!payload.rememberMe);
+
         if (payload.rememberMe) {
-          localStorage.setItem("token", data.token);
+          console.log("Login: token persisted in localStorage");
+        } else {
+          console.log("Login: token only in memory (lost on reload)");
         }
       }
       return res.data;
@@ -73,7 +107,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    clearToken();
     setToken(null);
     setUser(null);
   };

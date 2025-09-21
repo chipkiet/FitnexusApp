@@ -78,7 +78,7 @@ export const register = async (req, res) => {
     }
     res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Loi internal 1",
     });
   }
 };
@@ -140,7 +140,7 @@ export const login = async (req, res) => {
     console.error("Login error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Loi internal2 ",
     });
   }
 };
@@ -163,7 +163,7 @@ export const me = async (req, res) => {
     console.error("Me error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Loi internal 3",
     });
   }
 };
