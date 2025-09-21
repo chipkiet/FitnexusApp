@@ -34,6 +34,10 @@ export default function Register() {
       setLocalError('Bạn cần đồng ý với Điều khoản và Chính sách riêng tư.');
       return;
     }
+    if (form.password !== form.confirmPassword) {
+      setLocalError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
     try {
       const payload = {
         username: form.username,
@@ -43,7 +47,6 @@ export default function Register() {
         fullName: form.fullName || undefined,
         phone: form.phone || undefined,
       };
-
       const res = await register(payload);
       setSuccess(res?.message || 'Registered successfully');
     } catch (_) {
@@ -60,9 +63,8 @@ export default function Register() {
             <p className="mt-2 text-sm text-gray-500">Let's get you all set up so you can access your personal account.</p>
           </div>
           <div className="flex items-center gap-2 text-gray-900">
-            {/* <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 9.74s9-4.19 9-9.74V7L12 2z"/></svg> */}
             <div>
-                <img src={logo} alt="FITNEXUS" className="object-contain w-36 h-36 rounded-xl" />
+              <img src={logo} alt="FITNEXUS" className="object-contain w-36 h-36 rounded-xl" />
             </div>
             <span className="text-lg font-semibold">FITNEXUS</span>
           </div>

@@ -30,11 +30,11 @@ export const register = async (req, res) => {
       });
     }
 
-    const { username, email, password, fullName } = req.body;
+    const { username, email, password, fullName, phone } = req.body;
 
     // Kiểm tra trùng email/username
     const existingUser = await User.findOne({
-      where: { [Op.or]: [{ email }, { username }] },
+      where: { [Op.or]: [{ email }, { username }, {phone}] },
     });
 
     if (existingUser) {
@@ -49,6 +49,7 @@ export const register = async (req, res) => {
     const newUser = await User.create({
       username,
       email,
+      phone: phone || null,
       passwordHash: password,
       fullName: fullName || null,
       provider: "local",

@@ -18,6 +18,17 @@ export const endpoints = {
   health: '/api/health',
   auth: {
     register: '/api/auth/register',
+    login: '/api/auth/login',
+    me: '/api/auth/me',
   }, 
 };
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
