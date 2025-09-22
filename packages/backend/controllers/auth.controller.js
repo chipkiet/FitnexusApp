@@ -38,11 +38,22 @@ export const register = async (req, res) => {
     });
 
     if (existingUser) {
-      const field = existingUser.email === email ? "email" : "username";
+      let field, message;
+      if (existingUser.email === email) {
+        field = "email";
+        message = "Email đã tồn tại";
+      } else if (existingUser.username === username) {
+        field = "username";
+        message = "Username đã tồn tại";
+      } else if (existingUser.phone === phone) {
+        field = "phone";
+        message = "Số điện thoại đã tồn tại";
+      }
+      
       return res.status(400).json({
         success: false,
-        message: `User with ${field} already exists`,
-        errors: [{ field, message: `${field} is already taken` }],
+        message: message,
+        errors: [{ field, message }],
       });
     }
 
@@ -164,6 +175,96 @@ export const me = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Loi internal 3",
+    });
+  }
+};
+
+// Kiểm tra username đã tồn tại
+export const checkUsername = async (req, res) => {
+  try {
+    const { username } = req.query;
+    
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: "Username is required",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      where: { username },
+    });
+
+    return res.json({
+      success: true,
+      available: !existingUser,
+      message: existingUser ? "Username đã tồn tại" : "Username có thể sử dụng",
+    });
+  } catch (error) {
+    console.error("Check username error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Kiểm tra email đã tồn tại
+export const checkEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      where: { email },
+    });
+
+    return res.json({
+      success: true,
+      available: !existingUser,
+      message: existingUser ? "Email đã tồn tại" : "Email có thể sử dụng",
+    });
+  } catch (error) {
+    console.error("Check email error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+// Kiểm tra phone đã tồn tại
+export const checkPhone = async (req, res) => {
+  try {
+    const { phone } = req.query;
+    
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone is required",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      where: { phone },
+    });
+
+    return res.json({
+      success: true,
+      available: !existingUser,
+      message: existingUser ? "Số điện thoại đã tồn tại" : "Số điện thoại có thể sử dụng",
+    });
+  } catch (error) {
+    console.error("Check phone error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };

@@ -2,14 +2,31 @@ import React from 'react';
 import usePasswordVisibility from '../../hooks/usePasswordVisibility.js';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator.jsx';
 
-export default function PasswordInput({ label, name, value, onChange, placeholder, required = false, showStrengthIndicator = false }) {
+export default function PasswordInput({ 
+  label, 
+  name, 
+  value, 
+  onChange, 
+  placeholder, 
+  required = false, 
+  showStrengthIndicator = false,
+  isValid = false,
+  error = null
+}) {
   const { type, visible, toggle } = usePasswordVisibility(false);
+  const hasError = !!error;
+  const showSuccessIcon = isValid && value && !hasError;
+
   return (
-    <label className="block text-sm">
+    <div className="block text-sm">
       {label && <span className="block mb-1 font-medium text-gray-700">{label}</span>}
       <div className="relative">
         <input
-          className="w-full px-3 py-2 pr-10 transition-colors bg-white border rounded outline-none border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className={`w-full px-3 py-2 transition-colors bg-white border rounded outline-none ${
+            hasError 
+              ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-100' 
+              : 'border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+          } ${showSuccessIcon ? 'pr-20' : 'pr-10'}`}
           name={name}
           type={type}
           value={value}
@@ -18,6 +35,13 @@ export default function PasswordInput({ label, name, value, onChange, placeholde
           required={required}
           autoComplete="new-password"
         />
+        {showSuccessIcon && (
+          <div className="absolute inset-y-0 right-10 flex items-center justify-center w-10">
+            <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          </div>
+        )}
         <button
           type="button"
           onClick={toggle}
@@ -37,8 +61,11 @@ export default function PasswordInput({ label, name, value, onChange, placeholde
           )}
         </button>
       </div>
+      {error && (
+        <p className="mt-1 text-sm text-red-600">{error}</p>
+      )}
       {showStrengthIndicator && value && <PasswordStrengthIndicator password={value} />}
-    </label>
+    </div>
   );
 }
 

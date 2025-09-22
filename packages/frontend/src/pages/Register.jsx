@@ -12,6 +12,7 @@ import { validateUsername } from '../lib/usernameValidation.js';
 import { validateFullname } from '../lib/fullnameValidation.js';
 import { validatePhone } from '../lib/phoneValidation.js';
 import { validateEmail } from '../lib/emailValidation.js';
+import { useAvailabilityCheck } from '../hooks/useAvailabilityCheck.js';
 import logo from '../assets/branch/logo.png';
 
 export default function Register() {
@@ -29,6 +30,11 @@ export default function Register() {
   const [success, setSuccess] = useState(null);
   const [localError, setLocalError] = useState(null);
 
+  // Kiểm tra availability cho từng field
+  const usernameCheck = useAvailabilityCheck(form.username, 'username');
+  const emailCheck = useAvailabilityCheck(form.email, 'email');
+  const phoneCheck = useAvailabilityCheck(form.phone, 'phone');
+
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const onSubmit = async (e) => {
@@ -40,6 +46,12 @@ export default function Register() {
     const usernameValidation = validateUsername(form.username);
     if (!usernameValidation.isValid) {
       setLocalError(usernameValidation.message);
+      return;
+    }
+    
+    // Kiểm tra username availability
+    if (usernameCheck.isAvailable === false) {
+      setLocalError(usernameCheck.error || 'Username đã tồn tại');
       return;
     }
     
@@ -66,12 +78,24 @@ export default function Register() {
         setLocalError(phoneValidation.message);
         return;
       }
+      
+      // Kiểm tra phone availability
+      if (phoneCheck.isAvailable === false) {
+        setLocalError(phoneCheck.error || 'Số điện thoại đã tồn tại');
+        return;
+      }
     }
     
     // Validate email
     const emailValidation = validateEmail(form.email);
     if (!emailValidation.isValid) {
       setLocalError(emailValidation.message);
+      return;
+    }
+    
+    // Kiểm tra email availability
+    if (emailCheck.isAvailable === false) {
+      setLocalError(emailCheck.error || 'Email đã tồn tại');
       return;
     }
     
@@ -129,7 +153,15 @@ export default function Register() {
           placeholder="johnny" 
           required 
           showValidationIcon={true}
-          isValid={validateUsername(form.username).isValid}
+          isValid={validateUsername(form.username).isValid && usernameCheck.isAvailable !== false}
+          error={
+            usernameCheck.isAvailable === false 
+              ? usernameCheck.error 
+              : !validateUsername(form.username).isValid && form.username 
+              ? validateUsername(form.username).message 
+              : null
+          }
+          loading={usernameCheck.isChecking}
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TextInput 
@@ -140,6 +172,11 @@ export default function Register() {
             placeholder="John Doe" 
             showValidationIcon={true}
             isValid={validateFullname(form.fullName).isValid}
+            error={
+              !validateFullname(form.fullName).isValid && form.fullName 
+                ? validateFullname(form.fullName).message 
+                : null
+            }
           />
           <TextInput 
             label="Phone Number" 
@@ -148,7 +185,15 @@ export default function Register() {
             onChange={onChange} 
             placeholder="0123 456 789" 
             showValidationIcon={true}
-            isValid={validatePhone(form.phone).isValid}
+            isValid={validatePhone(form.phone).isValid && phoneCheck.isAvailable !== false}
+            error={
+              phoneCheck.isAvailable === false 
+                ? phoneCheck.error 
+                : !validatePhone(form.phone).isValid && form.phone 
+                ? validatePhone(form.phone).message 
+                : null
+            }
+            loading={phoneCheck.isChecking}
           />
           <div className="sm:col-span-2">
             <TextInput 
@@ -160,7 +205,15 @@ export default function Register() {
               placeholder="john.doe@gmail.com" 
               required 
               showValidationIcon={true}
-              isValid={validateEmail(form.email).isValid}
+              isValid={validateEmail(form.email).isValid && emailCheck.isAvailable !== false}
+              error={
+                emailCheck.isAvailable === false 
+                  ? emailCheck.error 
+                  : !validateEmail(form.email).isValid && form.email 
+                  ? validateEmail(form.email).message 
+                  : null
+              }
+              loading={emailCheck.isChecking}
             />
           </div>
         </div>
@@ -181,6 +234,12 @@ export default function Register() {
           onChange={onChange} 
           placeholder="••••••••••" 
           required 
+          isValid={form.confirmPassword === form.password && form.confirmPassword}
+          error={
+            form.confirmPassword && form.confirmPassword !== form.password 
+              ? 'Mật khẩu xác nhận không khớp' 
+              : null
+          }
         />
 
         <div className="flex items-center justify-between">

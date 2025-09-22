@@ -1,7 +1,7 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 
-import { register, login, me } from "../controllers/auth.controller.js";
+import { register, login, me, checkUsername, checkEmail, checkPhone } from "../controllers/auth.controller.js";
 import authGuard from "../middleware/auth.guard.js";
 import { registerValidation, loginValidation } from "../middleware/auth.validation.js";
 
@@ -24,5 +24,14 @@ router.post("/login", loginLimiter, loginValidation, login);
 
 // GET /api/auth/me
 router.get("/me", authGuard, me);
+
+// GET /api/auth/check-username
+router.get("/check-username", checkUsername);
+
+// GET /api/auth/check-email
+router.get("/check-email", checkEmail);
+
+// GET /api/auth/check-phone
+router.get("/check-phone", checkPhone);
 
 export default router;

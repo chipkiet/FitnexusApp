@@ -17,6 +17,9 @@ export const endpoints = {
     register: "/api/auth/register",
     login: "/api/auth/login",
     me: "/api/auth/me",
+    checkUsername: "/api/auth/check-username",
+    checkEmail: "/api/auth/check-email",
+    checkPhone: "/api/auth/check-phone",
   },
 };
 
@@ -44,5 +47,39 @@ api.interceptors.response.use(
     return Promise.reject(err);
   }
 );
+
+// API functions for checking availability
+export const checkUsernameAvailability = async (username) => {
+  try {
+    const response = await api.get(endpoints.auth.checkUsername, {
+      params: { username }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const checkEmailAvailability = async (email) => {
+  try {
+    const response = await api.get(endpoints.auth.checkEmail, {
+      params: { email }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const checkPhoneAvailability = async (phone) => {
+  try {
+    const response = await api.get(endpoints.auth.checkPhone, {
+      params: { phone }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
 
 export default api;
