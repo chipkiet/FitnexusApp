@@ -46,6 +46,12 @@ export const loginValidation = [
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
+    
+  // Thêm validation cho rememberMe
+  body('rememberMe')
+    .optional()
+    .isBoolean()
+    .withMessage('Remember me must be boolean'),
 
   // middleware xử lý lỗi
   (req, res, next) => {
