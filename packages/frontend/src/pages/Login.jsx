@@ -5,17 +5,25 @@ import loginImg from "../assets/login.png";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaApple } from "react-icons/fa";
 import Alert from "../components/common/Alert.jsx";
+import { openOAuthPopup } from "../lib/openOAuthPopup.js";
+import api, { endpoints } from "../lib/api.js";
 
 export default function Login() {
   const [form, setForm] = useState({ identifier: "", password: "", remember: false });
-  const { login, loading, error } = useAuth();
+  const [oauthLoading, setOauthLoading] = useState(false);
+
+  const { login, loading, error, oauthLogin } = useAuth();
   const navigate = useNavigate();
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm({ ...form, [name]: type === "checkbox" ? checked : value });
   };
 
+  // ====== Submit bằng email/username + password ======
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -26,15 +34,53 @@ export default function Login() {
       });
       navigate("/dashboard", { replace: true });
     } catch (_) {
-      // error state is handled via context; optionally we could show local fallback
+      // error đã được context xử lý
     }
   };
+
+// ====== Đăng nhập bằng Google (popup, không reload) ======
+// Poll session cho tới khi /api/auth/me trả 200
+async function waitForSession(maxMs = 10000, intervalMs = 400) {
+  const deadline = Date.now() + maxMs;
+
+  while (Date.now() < deadline) {
+    try {
+      // dùng axios instance => withCredentials đã bật sẵn
+      const { data } = await api.get(endpoints.auth.me, {
+        params: { t: Date.now() }, // bust cache
+        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+      });
+
+      if (data?.success) return data; // đã có session
+    } catch (err) {
+      // 401 thì tiếp tục poll, lỗi khác thì throw để biết mà xử lý
+      if (err?.response?.status !== 401) throw err;
+    }
+    await sleep(intervalMs);
+  }
+  throw new Error("Timeout waiting for session");
+}
+
+// ====== Đăng nhập bằng Google (popup + poll, KHÔNG dùng fetch tay) ======
+async function handleGoogleLogin() {
+  try {
+    const payload = await openOAuthPopup("http://localhost:3001/api/auth/google");
+    if (!payload?.token) throw new Error("No token from OAuth");
+
+    // Lưu token và user vào context
+    await oauthLogin(payload.token, payload.user, true);
+
+    navigate("/"); // hoặc "/home"
+  } catch (err) {
+    console.error("Google login error:", err);
+  }
+}
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="flex w-full max-w-4xl p-8 bg-white shadow-xl rounded-xl">
-        
-       
+        {/* Left */}
         <div className="w-1/2 pr-8">
           <h1 className="mb-6 text-xl font-semibold text-center text-gray-800">Your Logo</h1>
           <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
@@ -91,7 +137,6 @@ export default function Login() {
             </button>
           </form>
 
-      
           <div className="flex items-center my-6">
             <hr className="flex-grow border-gray-300" />
             <span className="mx-2 text-sm text-gray-500">or continue with</span>
@@ -99,10 +144,15 @@ export default function Login() {
           </div>
 
           <div className="flex gap-3">
-            <button className="flex items-center justify-center flex-1 gap-2 py-2 border rounded-lg hover:bg-gray-50">
-              <FcGoogle size={20} /> Google
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={oauthLoading}
+              className="flex items-center justify-center flex-1 gap-2 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-60"
+            >
+              <FcGoogle size={20} /> {oauthLoading ? "Connecting..." : "Google"}
             </button>
-            
+
             <button className="flex items-center justify-center flex-1 gap-2 py-2 border rounded-lg hover:bg-gray-50">
               <FaApple size={20} /> Apple
             </button>
@@ -119,7 +169,7 @@ export default function Login() {
           </p>
         </div>
 
-     
+        {/* Right */}
         <div className="flex items-center justify-center w-1/2">
           <img src={loginImg} alt="Login Illustration" className="w-3/4" />
         </div>

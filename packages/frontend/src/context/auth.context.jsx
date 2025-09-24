@@ -16,35 +16,52 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Bootstrap session from storage
+const oauthLogin = async (token, userFromOAuth, remember = true) => {
+  setTokens(token, null, remember);
+  if (userFromOAuth) setUser(userFromOAuth);
+
+  // gọi lại /me để confirm user (optional)
+  try {
+    const r = await api.get(endpoints.auth.me);
+    if (r?.data?.data) setUser(r.data.data);
+  } catch {}
+};
+
+  // Bootstrap session from storage or cookie session (Google OAuth)
   useEffect(() => {
     const initializeAuth = async () => {
       try {
         const token = getToken();
         const refreshToken = getRefreshToken();
         const remembered = isRemembered();
-        
-        console.log('Bootstrap: Token found:', !!token, 'Refresh:', !!refreshToken, 'Remembered:', remembered);
+        console.log("Bootstrap: Token found:", !!token, "Refresh:", !!refreshToken, "Remembered:", remembered);
 
-        if (!token) {
-          setLoading(false);
-          return;
+        // 1) Luôn thử "me" trước để nhận diện cookie session (Google OAuth)
+        try {
+          const r = await api.get(endpoints.auth.me);
+          if (r?.data?.success && r?.data?.data) {
+            setUser(r.data.data);
+            console.log("Bootstrap: Authenticated via cookie session.");
+            setLoading(false);
+            return; // đã có user từ cookie session
+          }
+        } catch {
+          // bỏ qua, sẽ thử theo token ở bước 2
         }
 
-        // Check token info
-        const tokenInfo = getTokenInfo();
-        console.log('Token info:', tokenInfo);
-
-        // Try to fetch current user
-        const response = await api.get(endpoints.auth.me);
-        
-        if (response?.data?.success && response?.data?.data) {
-          setUser(response.data.data);
-          console.log('Bootstrap: User authenticated successfully');
+        // 2) Nếu có token (JWT) thì thử xác thực lại
+        if (token) {
+          console.log("Token info:", getTokenInfo());
+          const r2 = await api.get(endpoints.auth.me);
+          if (r2?.data?.success && r2?.data?.data) {
+            setUser(r2.data.data);
+            console.log("Bootstrap: Authenticated via JWT.");
+          } else {
+            clearAllTokens();
+          }
         }
-      } catch (error) {
-        console.error('Bootstrap: Authentication failed:', error);
-        // Token is invalid, clear everything
+      } catch (e) {
+        console.error("Bootstrap: Authentication failed:", e);
         clearAllTokens();
         setUser(null);
       } finally {
@@ -58,21 +75,20 @@ export function AuthProvider({ children }) {
   const register = async (payload) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await api.post(endpoints.auth.register, payload);
       const { data } = response.data || {};
-      
+
       if (data?.user && data?.token) {
         setUser(data.user);
         setTokens(data.token, data.refreshToken, !!payload.rememberMe);
-        
-        console.log('Register: Success, Remember me:', !!payload.rememberMe);
+        console.log("Register: Success, Remember me:", !!payload.rememberMe);
       }
-      
+
       return response.data;
     } catch (err) {
-      console.error('Register error:', err);
+      console.error("Register error:", err);
       if (err.response?.status === 400) {
         setError({ message: "Dữ liệu không hợp lệ" });
       } else if (err.response?.status === 422) {
@@ -89,22 +105,21 @@ export function AuthProvider({ children }) {
   const login = async (payload) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await api.post(endpoints.auth.login, payload);
       const { data } = response.data || {};
-      
+
       if (data?.user && data?.token) {
         setUser(data.user);
         setTokens(data.token, data.refreshToken, !!payload.rememberMe);
-        
-        console.log('Login: Success, Remember me:', !!payload.rememberMe);
-        console.log('Token expires:', getTokenInfo()?.expiresAt);
+        console.log("Login: Success, Remember me:", !!payload.rememberMe);
+        console.log("Token expires:", getTokenInfo()?.expiresAt);
       }
-      
+
       return response.data;
     } catch (err) {
-      console.error('Login error:', err);
+      console.error("Login error:", err);
       if (err.response?.status === 400) {
         setError({ message: "Dữ liệu không hợp lệ" });
       } else if (err.response?.status === 401) {
@@ -122,33 +137,26 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     setLoading(true);
-    
     try {
-      // Clear client-side state
       setUser(null);
       clearAllTokens();
-      
-      console.log('Logout: Success');
-      
-      // Optional: Call logout endpoint to invalidate server-side session
-      // await api.post(endpoints.auth.logout);
-      
+      console.log("Logout: Success");
+      // Optional: await api.post(endpoints.auth.logout);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       setLoading(false);
     }
   };
 
   // Helper functions
-  const isAuthenticated = () => {
-    return !!user && !!getToken();
-  };
+  const isAuthenticated = () => !!user && !!getToken(); // vẫn hợp lệ với JWT
+  // Lưu ý: nếu bạn muốn coi cookie-session là "đăng nhập" luôn,
+  // có thể sửa thành:  return !!user;
 
   const getAuthStatus = () => {
     const token = getToken();
     const tokenInfo = getTokenInfo();
-    
     return {
       isAuthenticated: isAuthenticated(),
       isRemembered: isRemembered(),
@@ -157,29 +165,19 @@ export function AuthProvider({ children }) {
     };
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      error,
-      register,
-      login,
-      logout,
-      isAuthenticated,
-      getAuthStatus,
-      // Utility functions
-      clearError: () => setError(null),
-    }),
-    [user, loading, error]
-  );
+const value = useMemo(() => ({
+  user, loading, error,
+  register, login, logout,
+  oauthLogin,
+  isAuthenticated, getAuthStatus,
+  clearError: () => setError(null),
+}), [user, loading, error]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 }
