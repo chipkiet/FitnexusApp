@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
-import {useAuth} from '../context/auth.context';
+import { useAuth } from '../context/auth.context.jsx';
 import {
   ChevronRight,
   Home,

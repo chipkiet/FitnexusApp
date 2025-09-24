@@ -18,7 +18,6 @@ export const api = axios.create({
 });
 
 export const endpoints = {
-  health: "/api/health",
   auth: {
     register: "/api/auth/register",
     login: "/api/auth/login",

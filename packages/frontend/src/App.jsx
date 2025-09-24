@@ -1,7 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/auth.context.jsx";
-import HealthStatus from "./components/HealthStatus.jsx";
 import Register from "./pages/Register.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Login from "./pages/Login.jsx";
@@ -36,7 +35,6 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/health" element={<HealthStatus />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

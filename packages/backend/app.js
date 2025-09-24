@@ -64,13 +64,6 @@ app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/trainer', trainerRouter);
 
-app.get('/api/health', (_req, res) => {
-  res.json({
-    success: true,
-    message: 'Server is running',
-    timestamp: new Date().toISOString(),
-  });
-});
 
 app.get('/', (_req, res) => {
   res.json({ message: 'Chào mừng các tình yêu đã đến với web của anh' });
