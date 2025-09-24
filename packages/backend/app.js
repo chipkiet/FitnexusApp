@@ -8,6 +8,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
 import authRouter from './routes/auth.routes.js';
+import adminRouter from './routes/admin.routes.js';
+import trainerRouter from './routes/trainer.routes.js';
 
 dotenv.config();
 const app = express();
@@ -59,6 +61,8 @@ const authLimiter = rateLimit({
 
 // --- Routes
 app.use('/api/auth', authLimiter, authRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/trainer', trainerRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({
