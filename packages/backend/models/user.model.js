@@ -58,9 +58,14 @@ const User = sequelize.define('User', {
         field: 'provider_id',
     },
     role: {
-        type: DataTypes.ENUM('USER', 'ADMIN'),
+        type: DataTypes.ENUM('USER', 'TRAINER', 'ADMIN'),
         allowNull: false,
         defaultValue: 'USER',
+    },
+    plan: {
+        type: DataTypes.ENUM('FREE', 'PREMIUM'),
+        allowNull: false,
+        defaultValue: 'FREE',
     },
     status: {
         type: DataTypes.ENUM('ACTIVE', 'INACTIVE', 'BANNED'),

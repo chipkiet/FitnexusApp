@@ -19,12 +19,17 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login({
+      const result = await login({
         identifier: form.identifier,
         password: form.password,
         rememberMe: form.remember,
       });
-      navigate("/dashboard", { replace: true });
+      const role = result?.data?.user?.role;
+      if (role === 'ADMIN') {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (_) {
       // error state is handled via context; optionally we could show local fallback
     }

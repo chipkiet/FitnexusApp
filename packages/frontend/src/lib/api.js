@@ -18,7 +18,6 @@ export const api = axios.create({
 });
 
 export const endpoints = {
-  health: "/api/health",
   auth: {
     register: "/api/auth/register",
     login: "/api/auth/login",
@@ -27,6 +26,10 @@ export const endpoints = {
     checkUsername: "/api/auth/check-username",
     checkEmail: "/api/auth/check-email",
     checkPhone: "/api/auth/check-phone",
+  },
+  admin: {
+    users: "/api/admin/users",
+    userRole: (id) => `/api/admin/users/${id}/role`,
   },
 };
 
@@ -234,3 +237,16 @@ export const checkPhoneAvailability = async (phone) => {
 };
 
 export default api;
+
+// ===== Admin APIs (minimal) =====
+export const getAdminUsers = async ({ limit = 50, offset = 0, search = "" } = {}) => {
+  const params = { limit, offset };
+  if (search) params.search = search;
+  const res = await api.get(endpoints.admin.users, { params });
+  return res.data;
+};
+
+export const patchUserRole = async (userId, role) => {
+  const res = await api.patch(endpoints.admin.userRole(userId), { role });
+  return res.data;
+};
