@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/auth.context.jsx";
 import Register from "./pages/Register.jsx";
@@ -8,6 +8,7 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import VerifyCode from "./pages/VerifyCode.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import DashboardPreview from "./pages/DashboardPreview.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
 import AdminUsers from "./pages/AdminUsers.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import AdminOverview from "./pages/admin/Overview.jsx";
@@ -31,6 +32,13 @@ function PrivateRoute({ children }) {
 }
 
 function App() {
+  useEffect(() => {
+    // Debug listener để xem FE có nhận được message từ popup Google không
+    window.addEventListener("message", (e) => {
+      console.log("oauth msg:", e.origin, e.data);
+    });
+  }, []);
+
   return (
     <AuthProvider>
       <Router>
@@ -41,7 +49,6 @@ function App() {
           <Route path="/verify-code" element={<VerifyCode />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-       
           <Route
             path="/dashboard"
             element={
