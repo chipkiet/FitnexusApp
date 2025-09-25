@@ -6,26 +6,13 @@ export const validateEmail = (email) => {
     };
   }
 
-  // Regex cơ bản: chỉ check phần trước @
-  const emailPattern = /^[a-zA-Z0-9._%+-]+$/;
+  // Regex cơ bản: check email chuẩn (có cả local part và domain)
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-  const [localPart, domain] = email.split('@');
-
-  // Check phần local (trước @)
-  if (!localPart || !emailPattern.test(localPart)) {
+  if (!emailPattern.test(email)) {
     return {
       isValid: false,
       message: 'Email không đúng định dạng (ví dụ: example@gmail.com)'
-    };
-  }
-
-  // Chỉ cho phép domain cố định
-  const allowedDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'];
-
-  if (!domain || !allowedDomains.includes(domain.toLowerCase())) {
-    return {
-      isValid: false,
-      message: `Chỉ chấp nhận email thuộc các domain: ${allowedDomains.join(', ')}`
     };
   }
 
