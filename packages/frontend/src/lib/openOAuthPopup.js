@@ -1,7 +1,7 @@
 // /src/lib/openOAuthPopup.js
 export function openOAuthPopup(
   url,
-  { backendOrigin = "http://localhost:3001", frontendOrigin = "http://localhost:5173" } = {}
+  { backendOrigin = "http://localhost:3001", frontendOrigin = window.location.origin } = {}
 ) {
   return new Promise((resolve, reject) => {
     const popup = window.open(
@@ -14,21 +14,21 @@ export function openOAuthPopup(
     let closedCheck = null;
     let resolved = false;
 
-    function cleanup() {
+     function cleanup() {
+      resolved = true;
       window.removeEventListener("message", onMessage);
-      try { popup.close(); } catch (_) {}
       if (closedCheck) clearInterval(closedCheck);
+      try { popup.close(); } catch {}
     }
 
-function onMessage(event) {
-  if (event.origin !== backendOrigin && event.origin !== frontendOrigin) return;
-  const data = event.data || {};
-  if (data.source === "oauth" && data.provider === "google") {
-    resolved = true;
-    cleanup();
-    return resolve(data); // <-- có token, user
-  }
-}
+async function onMessage(e) {
+      if (e.origin !== backendOrigin) return;
+      const data = e.data || {};
+      if (data?.source !== "oauth" || data?.provider !== "google" || data?.status !== "success") return;
+
+      cleanup();
+      return resolve(data);
+    }
 
     window.addEventListener("message", onMessage);
 

@@ -29,6 +29,10 @@ export const endpoints = {
     checkEmail: "/api/auth/check-email",
     checkPhone: "/api/auth/check-phone",
   },
+  oauth: {
+    me: "/auth/me", 
+    google: "/auth/google"               // <<< SESSION (Passport)
+  }
 };
 
 // Những endpoint cho phép đi “thẳng” (không ép refresh/redirect)
@@ -39,7 +43,11 @@ const PASS_THROUGH = [
   "/auth/login",
   "/auth/register",
   "/auth/refresh",
+  "/auth/google",
+  "/auth/google/callback"
 ];
+
+const isPassThroughUrl = (u) => PASS_THROUGH.some((p) => (u || "").includes(p));
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -59,17 +67,17 @@ const processQueue = (error, token = null) => {
 api.interceptors.request.use(
   async (config) => {
     const url = config.url || "";
-    const isPassThrough = PASS_THROUGH.some(p => url.includes(p));
+   const pass = isPassThroughUrl(url);
     let token = getToken();
 
     // Nếu là pass-through:
     // - /auth/me: cho phép chạy không cần token để nhận cookie session (Google)
     // - login/register/refresh: luôn để nguyên
-    if (isPassThrough) {
+    if (pass) {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`; // có token thì vẫn gửi
       } else {
-        delete config.headers.Authorization;
+        delete config.headers.Authorization;  
       }
       return config;
     }
@@ -97,6 +105,7 @@ api.interceptors.request.use(
             setTokens(newAccessToken, newRefreshToken , true);
             config.headers.Authorization = `Bearer ${newAccessToken}`;
             processQueue(null, newAccessToken);
+            return config;       
           } catch (refreshError) {
             console.error('Token refresh failed:', refreshError);
             processQueue(refreshError, null);
@@ -147,47 +156,43 @@ api.interceptors.response.use(
     const originalRequest = error.config || {};
     const url = originalRequest.url || "";
 
-    // Nếu 401 từ /auth/me -> KHÔNG redirect.
-    // Trường hợp này thường xảy ra khi người dùng chưa đăng nhập (bình thường).
-    if (error?.response?.status === 401 && PASS_THROUGH.some(p => url.includes(p))) {
+    // 401 từ pass-through (vd: /auth/me khi chưa login) -> không redirect
+    if (error?.response?.status === 401 && isPassThroughUrl(url)) {
       return Promise.reject(error);
     }
 
-    // 401 cho các route khác -> thử refresh (nếu có) rồi retry
+    // 401 ở các route khác -> thử refresh rồi retry
     if (error?.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // Queue the failed request
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then(token => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return api(originalRequest);
-        }).catch(err => Promise.reject(err));
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
       }
 
       originalRequest._retry = true;
       const refreshToken = getRefreshToken();
 
-      if (refreshToken && !url.includes('/auth/refresh')) {
+      if (refreshToken && !url.includes(endpoints.auth.refresh)) {
         isRefreshing = true;
-
         try {
           const response = await axios.post(
             `${BASE_URL}${endpoints.auth.refresh}`,
             { refreshToken },
-            { 
-              headers: { "Content-Type": "application/json" },
-              withCredentials: true 
-            }
+            { headers: { "Content-Type": "application/json" }, withCredentials: true }
           );
+          const { token: newAccessToken, refreshToken: newRefreshToken } =
+            response.data.data;
 
-          const { token: newAccessToken, refreshToken: newRefreshToken } = response.data.data;
           setTokens(newAccessToken, newRefreshToken, true);
           processQueue(null, newAccessToken);
 
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return api(originalRequest);
-
         } catch (refreshError) {
           processQueue(refreshError, null);
           clearAllTokens();
@@ -199,7 +204,6 @@ api.interceptors.response.use(
           isRefreshing = false;
         }
       } else {
-        // Không có refresh token
         clearAllTokens();
         if (!window.location.pathname.startsWith("/login")) {
           window.location.replace("/login");
@@ -211,38 +215,20 @@ api.interceptors.response.use(
   }
 );
 
-// API functions for checking availability
+// ===== Convenience APIs =====
 export const checkUsernameAvailability = async (username) => {
-  try {
-    const response = await api.get(endpoints.auth.checkUsername, {
-      params: { username }
-    });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
+  const response = await api.get(endpoints.auth.checkUsername, { params: { username } });
+  return response.data;
 };
 
 export const checkEmailAvailability = async (email) => {
-  try {
-    const response = await api.get(endpoints.auth.checkEmail, {
-      params: { email }
-    });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
+  const response = await api.get(endpoints.auth.checkEmail, { params: { email } });
+  return response.data;
 };
 
 export const checkPhoneAvailability = async (phone) => {
-  try {
-    const response = await api.get(endpoints.auth.checkPhone, {
-      params: { phone }
-    });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
+  const response = await api.get(endpoints.auth.checkPhone, { params: { phone } });
+  return response.data;
 };
 
 export default api;

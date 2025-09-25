@@ -9,6 +9,7 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import VerifyCode from "./pages/VerifyCode.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import DashboardPreview from "./pages/DashboardPreview.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
 
 function PrivateRoute({ children }) {
   const { user, token, loading } = useAuth();

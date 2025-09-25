@@ -6,20 +6,19 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-
-import authRouter from './routes/auth.routes.js';
-
 import session from 'express-session';
+
 import passport from './config/passport.js';
-import googleAuthRoutes from './routes/auth.js';
+import authRouter from './routes/auth.routes.js';  // JWT routes under /api/auth
+import googleAuthRoutes from './routes/auth.js';   // Google OAuth routes under /auth
 
 dotenv.config();
+
 const app = express();
 const isDev = process.env.NODE_ENV !== 'production';
-
 const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-// --- CORS (đặt TRƯỚC helmet)
+// ==== CORS (đặt trước mọi thứ khác) ====
 const corsOptions = {
   origin: [
     FRONTEND,
@@ -33,54 +32,49 @@ const corsOptions = {
   allowedHeaders: [
     'Content-Type',
     'Authorization',
-    'Cache-Control', // cần cho một số browser
-    'Pragma',        // tránh lỗi "pragma is not allowed"
+    'Cache-Control',
+    'Pragma',
     'Expires',
     'X-Requested-With',
   ],
   exposedHeaders: ['Set-Cookie'],
 };
-
 app.use(cors(corsOptions));
 
-// Bảo hiểm header CORS + preflight cho mọi request
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (corsOptions.origin.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
-    res.header('Access-Control-Allow-Origin', FRONTEND);
-  }
-  res.header('Vary', 'Origin');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, Cache-Control, Pragma, Expires, X-Requested-With'
-  );
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  next();
-});
-
-// --- Security middlewares
+// ==== Security & logging ====
 app.use(helmet());
-
-// --- Logging
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(isDev ? 'dev' : 'combined'));
 }
 
-// --- Cookies
+// ==== Body & cookies ====
 app.use(cookieParser());
-
-// --- Body parsers (200kb)
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: true, limit: '200kb' }));
 
-// --- Rate limit cho tất cả /api/auth/*
+// ==== Session (chỉ KHAI BÁO 1 LẦN, dùng SESSION_SECRET) ====
+if (!process.env.SESSION_SECRET) {
+  console.warn('[WARN] SESSION_SECRET is missing in .env');
+}
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev_fallback_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,   // FE không cần đọc cookie => an toàn hơn
+    secure: false,    // đặt true khi chạy HTTPS
+    sameSite: 'lax',  // nếu FE/BE khác domain + HTTPS: 'none' + secure:true
+  },
+}));
+
+// ==== Passport ====
+app.use(passport.initialize());
+app.use(passport.session());
+
+// ==== Rate limit cho /api/auth ====
 const authLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 phút
-  max: 10, // 10 req / IP / phút
+  windowMs: 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -90,29 +84,14 @@ const authLimiter = rateLimit({
   },
 });
 
-// --- Routes API (JWT)
-app.use('/api/auth', authRouter);
+// ==== Routes ====
+// JWT-based auth APIs
+app.use('/api/auth', authLimiter, authRouter);
 
-// --- session + passport (cho Google OAuth)
-app.use(
-  session({
-    secret: process.env.JWT_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false,   // true nếu chạy HTTPS
-      httpOnly: false, // bạn đang cần FE JS đọc; nếu không cần thì nên để true
-      sameSite: 'lax', // nếu deploy khác domain và cần cross-site cookie: 'none' + secure:true
-    },
-  })
-);
-app.use(passport.initialize());
-app.use(passport.session());
-
-// --- routes Google OAuth (dùng session)
+// Google OAuth (session-based)
 app.use('/auth', googleAuthRoutes);
 
-// --- Health
+// Health
 app.get('/api/health', (_req, res) => {
   res.json({
     success: true,
@@ -121,12 +100,12 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// --- Root
+// Root
 app.get('/', (_req, res) => {
   res.json({ message: 'Chào mừng các tình yêu đã đến với web của anh' });
 });
 
-// --- 404
+// 404
 app.use('*', (_req, res) => {
   res.status(404).json({
     success: false,
@@ -135,18 +114,15 @@ app.use('*', (_req, res) => {
   });
 });
 
-// --- Global error handler
+// Global error handler
 app.use((err, _req, res, _next) => {
-  if (isDev) {
-    console.error('Global error:', err);
-  }
+  if (isDev) console.error('Global error:', err);
   const status = err.status || 500;
-  const safeMessage =
-    status === 500 && !isDev ? 'Lỗi đăng ký ở app 1' : err.message;
+  const safeMessage = status === 500 && !isDev ? 'Internal server error' : err.message;
 
   res.status(status).json({
     success: false,
-    message: safeMessage || 'Lỗi đăng ký ở app 2',
+    message: safeMessage || 'Internal server error',
     errors: Array.isArray(err.errors) ? err.errors : [],
     ...(isDev ? { stack: err.stack } : {}),
   });

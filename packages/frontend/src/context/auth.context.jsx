@@ -4,7 +4,6 @@ import {
   setTokens,
   clearAllTokens,
   getToken,
-  getRefreshToken,
   isRemembered,
   getTokenInfo,
 } from "../lib/tokenManager.js";
@@ -16,49 +15,48 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-const oauthLogin = async (token, userFromOAuth, remember = true) => {
-  setTokens(token, null, remember);
-  if (userFromOAuth) setUser(userFromOAuth);
+  // OAuth (Google) – lấy user từ session cookie
+  const oauthLogin = async (remember = true) => {
+    try {
+      const r = await api.get(endpoints.oauth.me); // /auth/me
+      const u = r.data?.user || r.data?.data || null;
+      if (u) {
+        setUser(u);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.error("OAuth me error:", e);
+      return false;
+    }
+  };
 
-  // gọi lại /me để confirm user (optional)
-  try {
-    const r = await api.get(endpoints.auth.me);
-    if (r?.data?.data) setUser(r.data.data);
-  } catch {}
-};
+  // (tuỳ chọn) tiện gọi lại khi cần
+  const refreshUser = async () => {
+    try {
+      const r = await api.get(endpoints.oauth.me);
+      if (r?.data?.user) { setUser(r.data.user); return true; }
+      const r2 = await api.get(endpoints.auth.me);
+      if (r2?.data?.success && r2?.data?.data) { setUser(r2.data.data); return true; }
+      return false;
+    } catch { return false; }
+  };
 
-  // Bootstrap session from storage or cookie session (Google OAuth)
+  // Bootstrap: ưu tiên session (Google), sau đó JWT
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const token = getToken();
-        const refreshToken = getRefreshToken();
-        const remembered = isRemembered();
-        console.log("Bootstrap: Token found:", !!token, "Refresh:", !!refreshToken, "Remembered:", remembered);
-
-        // 1) Luôn thử "me" trước để nhận diện cookie session (Google OAuth)
         try {
-          const r = await api.get(endpoints.auth.me);
-          if (r?.data?.success && r?.data?.data) {
-            setUser(r.data.data);
-            console.log("Bootstrap: Authenticated via cookie session.");
-            setLoading(false);
-            return; // đã có user từ cookie session
-          }
-        } catch {
-          // bỏ qua, sẽ thử theo token ở bước 2
-        }
-
-        // 2) Nếu có token (JWT) thì thử xác thực lại
+          const r = await api.get(endpoints.oauth.me); // /auth/me
+          if (r?.data?.user) { setUser(r.data.user); return; }
+        } catch {}
+        const token = getToken();
         if (token) {
-          console.log("Token info:", getTokenInfo());
-          const r2 = await api.get(endpoints.auth.me);
-          if (r2?.data?.success && r2?.data?.data) {
-            setUser(r2.data.data);
-            console.log("Bootstrap: Authenticated via JWT.");
-          } else {
-            clearAllTokens();
-          }
+          try {
+            const r2 = await api.get(endpoints.auth.me); // /api/auth/me
+            if (r2?.data?.success && r2?.data?.data) { setUser(r2.data.data); return; }
+            else { clearAllTokens(); }
+          } catch { clearAllTokens(); }
         }
       } catch (e) {
         console.error("Bootstrap: Authentication failed:", e);
@@ -68,34 +66,25 @@ const oauthLogin = async (token, userFromOAuth, remember = true) => {
         setLoading(false);
       }
     };
-
     initializeAuth();
   }, []);
 
   const register = async (payload) => {
     setLoading(true);
     setError(null);
-
     try {
       const response = await api.post(endpoints.auth.register, payload);
       const { data } = response.data || {};
-
       if (data?.user && data?.token) {
         setUser(data.user);
         setTokens(data.token, data.refreshToken, !!payload.rememberMe);
-        console.log("Register: Success, Remember me:", !!payload.rememberMe);
       }
-
       return response.data;
     } catch (err) {
       console.error("Register error:", err);
-      if (err.response?.status === 400) {
-        setError({ message: "Dữ liệu không hợp lệ" });
-      } else if (err.response?.status === 422) {
-        setError({ message: "Thông tin đăng ký không đúng định dạng" });
-      } else {
-        setError(err?.response?.data || { message: err.message });
-      }
+      if (err.response?.status === 400) setError({ message: "Dữ liệu không hợp lệ" });
+      else if (err.response?.status === 422) setError({ message: "Thông tin đăng ký không đúng định dạng" });
+      else setError(err?.response?.data || { message: err.message });
       throw err;
     } finally {
       setLoading(false);
@@ -105,30 +94,20 @@ const oauthLogin = async (token, userFromOAuth, remember = true) => {
   const login = async (payload) => {
     setLoading(true);
     setError(null);
-
     try {
       const response = await api.post(endpoints.auth.login, payload);
       const { data } = response.data || {};
-
       if (data?.user && data?.token) {
         setUser(data.user);
         setTokens(data.token, data.refreshToken, !!payload.rememberMe);
-        console.log("Login: Success, Remember me:", !!payload.rememberMe);
-        console.log("Token expires:", getTokenInfo()?.expiresAt);
       }
-
       return response.data;
     } catch (err) {
       console.error("Login error:", err);
-      if (err.response?.status === 400) {
-        setError({ message: "Dữ liệu không hợp lệ" });
-      } else if (err.response?.status === 401) {
-        setError({ message: "Sai tài khoản hoặc mật khẩu" });
-      } else if (err.response?.status === 403) {
-        setError({ message: "Tài khoản đã bị khóa" });
-      } else {
-        setError(err?.response?.data || { message: err.message });
-      }
+      if (err.response?.status === 400) setError({ message: "Dữ liệu không hợp lệ" });
+      else if (err.response?.status === 401) setError({ message: "Sai tài khoản hoặc mật khẩu" });
+      else if (err.response?.status === 403) setError({ message: "Tài khoản đã bị khóa" });
+      else setError(err?.response?.data || { message: err.message });
       throw err;
     } finally {
       setLoading(false);
@@ -140,7 +119,6 @@ const oauthLogin = async (token, userFromOAuth, remember = true) => {
     try {
       setUser(null);
       clearAllTokens();
-      console.log("Logout: Success");
       // Optional: await api.post(endpoints.auth.logout);
     } catch (error) {
       console.error("Logout error:", error);
@@ -149,10 +127,8 @@ const oauthLogin = async (token, userFromOAuth, remember = true) => {
     }
   };
 
-  // Helper functions
-  const isAuthenticated = () => !!user && !!getToken(); // vẫn hợp lệ với JWT
-  // Lưu ý: nếu bạn muốn coi cookie-session là "đăng nhập" luôn,
-  // có thể sửa thành:  return !!user;
+  // Đã đăng nhập khi có user (hỗ trợ cả session & JWT)
+  const isAuthenticated = () => !!user;
 
   const getAuthStatus = () => {
     const token = getToken();
@@ -165,13 +141,22 @@ const oauthLogin = async (token, userFromOAuth, remember = true) => {
     };
   };
 
-const value = useMemo(() => ({
-  user, loading, error,
-  register, login, logout,
-  oauthLogin,
-  isAuthenticated, getAuthStatus,
-  clearError: () => setError(null),
-}), [user, loading, error]);
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      error,
+      register,
+      login,
+      logout,
+      oauthLogin,
+      refreshUser, // (tuỳ chọn) export ra nếu cần
+      isAuthenticated,
+      getAuthStatus,
+      clearError: () => setError(null),
+    }),
+    [user, loading, error]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

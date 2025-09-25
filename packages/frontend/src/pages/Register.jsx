@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ bổ sung
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth.context.jsx';
 import AuthLayout from '../layouts/AuthLayout.jsx';
 import TextInput from '../components/form/TextInput.jsx';
@@ -15,7 +15,7 @@ import { validatePhone } from '../lib/phoneValidation.js';
 import { validateEmail } from '../lib/emailValidation.js';
 import { useAvailabilityCheck } from '../hooks/useAvailabilityCheck.js';
 import logo from '../assets/branch/logo.png';
-import { openOAuthPopup } from "../lib/openOAuthPopup.js";
+//import { openOAuthPopup } from "../lib/openOAuthPopup.js";
 
 export default function Register() {
   const { register, loading, error } = useAuth();
@@ -129,23 +129,11 @@ export default function Register() {
   };
 
   // ===== Đăng ký/đăng nhập bằng Google (popup, không reload) =====
-async function handleGoogleRegister(e) {
-  e.preventDefault();
-  try {
-    const { status, token, user } = await openOAuthPopup("http://localhost:3001/auth/google");
-    if (status === "onboarding") {
-      navigate("/onboarding", { replace: true });
-      return;
-    }
-    if (status === "success" && token) {
-      localStorage.setItem("access_token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      navigate("/dashboard", { replace: true });
-    }
-  } catch (e) {
-    console.error("Google register error:", e);
-  }
-}
+ const handleGoogleRegister = (e) => {
+    e.preventDefault();
+    const be = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    window.location.href = `${be}/auth/google`;
+  };
 
   return (
     <AuthLayout ratio='1/3'>
