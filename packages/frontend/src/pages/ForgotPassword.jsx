@@ -21,20 +21,32 @@ export default function ForgotPassword() {
 
       // BE trả message chung để tránh dò email
       setNotice({
-        type: "success",
-        text:
-          "Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư (và mục Spam).",
+      type: "success",
+      text:
+        "Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư (kể cả Spam).",
+    });
+  } catch (err) {
+    const status = err?.response?.status;
+    const serverMsg = err?.response?.data?.message;
+
+    if (status === 404) {
+      // Email chưa đăng ký
+      setNotice({
+        type: "error",
+        text: "Email này chưa được đăng ký. Vui lòng đăng ký tài khoản trước khi đặt lại mật khẩu.",
       });
-    } catch (err) {
-      // Trường hợp lỗi mạng / lỗi server
-      const msg =
-        err?.response?.data?.message ||
-        "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
-      setNotice({ type: "error", text: msg });
-    } finally {
-      setLoading(false);
+      // (tuỳ chọn) điều hướng sang trang đăng ký:
+      // navigate("/register");
+    } else {
+      setNotice({
+        type: "error",
+        text: serverMsg || "Đã có lỗi xảy ra. Vui lòng thử lại sau.",
+      });
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">

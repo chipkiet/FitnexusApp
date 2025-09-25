@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth.context.jsx';
 import AuthLayout from '../layouts/AuthLayout.jsx';
 import TextInput from '../components/form/TextInput.jsx';
@@ -17,6 +18,7 @@ import logo from '../assets/branch/logo.png';
 
 export default function Register() {
   const { register, loading, error } = useAuth();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     username: '',
@@ -118,6 +120,7 @@ export default function Register() {
       };
       const res = await register(payload);
       setSuccess(res?.message || 'Registered successfully');
+      navigate('/login?registered=1', { replace: true });
     } catch (_) {
       // error handled via context
     }
