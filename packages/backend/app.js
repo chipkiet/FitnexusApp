@@ -8,8 +8,10 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 
+import authRouter from './routes/auth.routes.js';
+import adminRouter from './routes/admin.routes.js';
+import trainerRouter from './routes/trainer.routes.js';
 import passport from './config/passport.js';
-import authRouter from './routes/auth.routes.js';  // JWT routes under /api/auth
 import googleAuthRoutes from './routes/auth.js';   // Google OAuth routes under /auth
 
 dotenv.config();
@@ -87,6 +89,9 @@ const authLimiter = rateLimit({
 // ==== Routes ====
 // JWT-based auth APIs
 app.use('/api/auth', authLimiter, authRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/trainer', trainerRouter);
+
 
 // Google OAuth (session-based)
 app.use('/auth', googleAuthRoutes);

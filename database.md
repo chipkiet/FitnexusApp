@@ -15,6 +15,7 @@ Table Users {
   created_at TIMESTAMP [default: `now()`]
   updated_at TIMESTAMP
   last_login_at TIMESTAMP
+  user_plan varchar(20) [not null, default: 'FREE'] 
 }
 
 // ==== Bảng Thư viện & Giải phẫu ====
@@ -120,3 +121,17 @@ Table UserWorkoutLog_Details {
   weight_kg DECIMAL(6, 2)
   duration_seconds INT
 }
+
+Table PasswordResets {
+  id INT [pk, increment]                      // hoặc UUID nếu bạn muốn
+  user_id INT [ref: > Users.user_id, not null]
+  token_hash TEXT [not null]                  // SHA-256 của token
+  expires_at TIMESTAMP [not null]             // hết hạn (15–30 phút)
+  used_at TIMESTAMP                           // null nếu chưa dùng
+  created_at TIMESTAMP [default: `now()`]
+
+  // Index gợi ý (DBML comment, tạo index ở migration SQL)
+  Note: 'INDEX(user_id), INDEX(token_hash)'
+}
+
+
