@@ -364,9 +364,10 @@ export const forgotPassword = async (req, res, next) => {
     const user = await User.findOne({ where: { email } });
     // Luôn trả 200 để tránh dò email
     if (!user) {
-      return res.json({
-        success: true,
-        message: "If the email exists, a reset link will be sent.",
+      return res.status(404).json({
+        success: false,
+        message: "Email này chưa được đăng ký. Vui lòng đăng ký tài khoản trước khi đặt lại mật khẩu.",
+        code: "EMAIL_NOT_REGISTERED",
       });
     }
 
