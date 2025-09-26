@@ -122,7 +122,7 @@ export default function Register() {
       };
       const res = await register(payload);
       setSuccess(res?.message || 'Registered successfully');
-      navigate('/dashboard', { replace: true }); // ✅ vào Home sau khi đăng ký
+      navigate('/login?registered=1', { replace: true });
     } catch (_) {
       // error handled via context
     }
