@@ -3,6 +3,10 @@ import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { Op } from "sequelize";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+import PasswordReset from "../models/passwordReset.model.js";
+import { sendMail } from "../utils/mailer.js";
+import { buildResetPasswordEmail } from "../utils/emailTemplates.js";
 
 const generateTokens = (userId, role, rememberMe = false) => {
 
@@ -346,5 +350,120 @@ export const checkPhone = async (req, res) => {
       success: false,
       message: "Internal server error",
     });
+  }
+};
+
+// ========= FORGOT PASSWORD =========
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body ?? {};
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    // Luôn trả 200 để tránh dò email
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Email này chưa được đăng ký. Vui lòng đăng ký tài khoản trước khi đặt lại mật khẩu.",
+        code: "EMAIL_NOT_REGISTERED",
+      });
+    }
+
+    // Tạo token & hash (lưu hash vào DB)
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const ttlMin = Number(process.env.RESET_TOKEN_TTL_MIN || 15);
+    const expiresAt = new Date(Date.now() + ttlMin * 60 * 1000);
+
+    // Tuỳ chọn: vô hiệu token cũ chưa dùng
+    await PasswordReset.update(
+      { used_at: new Date() },
+      { where: { user_id: user.user_id, used_at: null } }
+    );
+
+    await PasswordReset.create({
+      user_id: user.user_id,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
+      used_at: null,
+    });
+
+    const resetBase = process.env.FRONTEND_RESET_URL || `${process.env.FRONTEND_URL}/reset-password`;
+    const resetUrl = new URL(resetBase);
+    resetUrl.searchParams.set("token", token);
+
+    const { subject, html, text } = buildResetPasswordEmail({
+      name: user.fullName || user.username || "bạn",
+      resetUrl: resetUrl.toString(),
+      ttlMin,
+      brand: "FitNexus",
+    });
+
+    await sendMail({ to: user.email, subject, html, text });
+
+    return res.json({
+      success: true,
+      message: "If the email exists, a reset link will be sent.",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// ========= RESET PASSWORD =========
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body ?? {};
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Token and newPassword are required",
+      });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const pr = await PasswordReset.findOne({
+      where: {
+        token_hash: tokenHash,
+        used_at: { [Op.is]: null },
+        expires_at: { [Op.gt]: new Date() },
+      },
+      order: [["created_at", "DESC"]],
+    });
+
+    if (!pr) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
+    }
+
+    const user = await User.findByPk(pr.user_id);
+    if (!user) {
+      return res.status(400).json({ success: false, message: "User not found" });
+    }
+
+    // Gán mật khẩu mới (hook beforeUpdate trong model User sẽ tự hash)
+    user.passwordHash = newPassword;
+    // Nếu trước đây là đăng nhập Google (provider khác local) thì cho phép local login luôn
+    if (user.provider !== "local") user.provider = "local";
+    await user.save();
+
+    // Đánh dấu token đã dùng
+    pr.used_at = new Date();
+    await pr.save();
+
+    return res.json({
+      success: true,
+      message: "Password has been reset successfully",
+    });
+  } catch (err) {
+    next(err);
   }
 };
