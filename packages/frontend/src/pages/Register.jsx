@@ -15,6 +15,7 @@ import { validatePhone } from '../lib/phoneValidation.js';
 import { validateEmail } from '../lib/emailValidation.js';
 import { useAvailabilityCheck } from '../hooks/useAvailabilityCheck.js';
 import logo from '../assets/branch/logo.png';
+//import { openOAuthPopup } from "../lib/openOAuthPopup.js";
 
 export default function Register() {
   const { register, loading, error } = useAuth();
@@ -39,31 +40,32 @@ export default function Register() {
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  // ===== Đăng ký bằng form truyền thống =====
   const onSubmit = async (e) => {
     e.preventDefault();
     setSuccess(null);
     setLocalError(null);
-    
+
     // Validate username
     const usernameValidation = validateUsername(form.username);
     if (!usernameValidation.isValid) {
       setLocalError(usernameValidation.message);
       return;
     }
-    
+
     // Kiểm tra username availability
     if (usernameCheck.isAvailable === false) {
       setLocalError(usernameCheck.error || 'Username đã tồn tại');
       return;
     }
-    
+
     // Validate password strength
     const passwordValidation = validatePassword(form.password);
     if (!passwordValidation.isValid) {
       setLocalError(passwordValidation.message);
       return;
     }
-    
+
     // Validate fullname
     if (form.fullName) {
       const fullnameValidation = validateFullname(form.fullName);
@@ -72,7 +74,7 @@ export default function Register() {
         return;
       }
     }
-    
+
     // Validate phone
     if (form.phone) {
       const phoneValidation = validatePhone(form.phone);
@@ -80,27 +82,26 @@ export default function Register() {
         setLocalError(phoneValidation.message);
         return;
       }
-      
       // Kiểm tra phone availability
       if (phoneCheck.isAvailable === false) {
         setLocalError(phoneCheck.error || 'Số điện thoại đã tồn tại');
         return;
       }
     }
-    
+
     // Validate email
     const emailValidation = validateEmail(form.email);
     if (!emailValidation.isValid) {
       setLocalError(emailValidation.message);
       return;
     }
-    
+
     // Kiểm tra email availability
     if (emailCheck.isAvailable === false) {
       setLocalError(emailCheck.error || 'Email đã tồn tại');
       return;
     }
-    
+
     if (!form.agree) {
       setLocalError('Bạn cần đồng ý với Điều khoản và Chính sách riêng tư.');
       return;
@@ -109,6 +110,7 @@ export default function Register() {
       setLocalError('Mật khẩu xác nhận không khớp.');
       return;
     }
+
     try {
       const payload = {
         username: form.username,
@@ -120,10 +122,17 @@ export default function Register() {
       };
       const res = await register(payload);
       setSuccess(res?.message || 'Registered successfully');
-      navigate('/login?registered=1', { replace: true });
+      navigate('/dashboard', { replace: true }); // ✅ vào Home sau khi đăng ký
     } catch (_) {
       // error handled via context
     }
+  };
+
+  // ===== Đăng ký/đăng nhập bằng Google (popup, không reload) =====
+ const handleGoogleRegister = (e) => {
+    e.preventDefault();
+    const be = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    window.location.href = `${be}/auth/google`;
   };
 
   return (
@@ -132,7 +141,9 @@ export default function Register() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Sign up</h1>
-            <p className="mt-2 text-sm text-gray-500">Let's get you all set up so you can access your personal account.</p>
+            <p className="mt-2 text-sm text-gray-500">
+              Let's get you all set up so you can access your personal account.
+            </p>
           </div>
           <div className="flex items-center gap-2 text-gray-900">
             <div>
@@ -148,72 +159,73 @@ export default function Register() {
       {error && <div className="mt-3"><Alert type="error">{error.message || 'Registration failed'}</Alert></div>}
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        <TextInput 
-          label="Username" 
-          name="username" 
-          value={form.username} 
-          onChange={onChange} 
-          placeholder="johnny" 
-          required 
+        <TextInput
+          label="Username"
+          name="username"
+          value={form.username}
+          onChange={onChange}
+          placeholder="johnny"
+          required
           showValidationIcon={true}
           isValid={validateUsername(form.username).isValid && usernameCheck.isAvailable !== false}
           error={
-            usernameCheck.isAvailable === false 
-              ? usernameCheck.error 
-              : !validateUsername(form.username).isValid && form.username 
-              ? validateUsername(form.username).message 
+            usernameCheck.isAvailable === false
+              ? usernameCheck.error
+              : !validateUsername(form.username).isValid && form.username
+              ? validateUsername(form.username).message
               : null
           }
           loading={usernameCheck.isChecking}
         />
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TextInput 
-            label="Full Name" 
-            name="fullName" 
-            value={form.fullName} 
-            onChange={onChange} 
-            placeholder="John Doe" 
+          <TextInput
+            label="Full Name"
+            name="fullName"
+            value={form.fullName}
+            onChange={onChange}
+            placeholder="John Doe"
             showValidationIcon={true}
             isValid={validateFullname(form.fullName).isValid}
             error={
-              !validateFullname(form.fullName).isValid && form.fullName 
-                ? validateFullname(form.fullName).message 
+              !validateFullname(form.fullName).isValid && form.fullName
+                ? validateFullname(form.fullName).message
                 : null
             }
           />
-          <TextInput 
-            label="Phone Number" 
-            name="phone" 
-            value={form.phone} 
-            onChange={onChange} 
-            placeholder="0123 456 789" 
+          <TextInput
+            label="Phone Number"
+            name="phone"
+            value={form.phone}
+            onChange={onChange}
+            placeholder="0123 456 789"
             showValidationIcon={true}
             isValid={validatePhone(form.phone).isValid && phoneCheck.isAvailable !== false}
             error={
-              phoneCheck.isAvailable === false 
-                ? phoneCheck.error 
-                : !validatePhone(form.phone).isValid && form.phone 
-                ? validatePhone(form.phone).message 
+              phoneCheck.isAvailable === false
+                ? phoneCheck.error
+                : !validatePhone(form.phone).isValid && form.phone
+                ? validatePhone(form.phone).message
                 : null
             }
             loading={phoneCheck.isChecking}
           />
           <div className="sm:col-span-2">
-            <TextInput 
-              label="Email" 
-              type="email" 
-              name="email" 
-              value={form.email} 
-              onChange={onChange} 
-              placeholder="john.doe@gmail.com" 
-              required 
+            <TextInput
+              label="Email"
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={onChange}
+              placeholder="john.doe@gmail.com"
+              required
               showValidationIcon={true}
               isValid={validateEmail(form.email).isValid && emailCheck.isAvailable !== false}
               error={
-                emailCheck.isAvailable === false 
-                  ? emailCheck.error 
-                  : !validateEmail(form.email).isValid && form.email 
-                  ? validateEmail(form.email).message 
+                emailCheck.isAvailable === false
+                  ? emailCheck.error
+                  : !validateEmail(form.email).isValid && form.email
+                  ? validateEmail(form.email).message
                   : null
               }
               loading={emailCheck.isChecking}
@@ -221,26 +233,26 @@ export default function Register() {
           </div>
         </div>
 
-        <PasswordInput 
-          label="Password" 
-          name="password" 
-          value={form.password} 
-          onChange={onChange} 
-          placeholder="••••••••••" 
-          required 
+        <PasswordInput
+          label="Password"
+          name="password"
+          value={form.password}
+          onChange={onChange}
+          placeholder="••••••••••"
+          required
           showStrengthIndicator={true}
         />
-        <PasswordInput 
-          label="Confirm Password" 
-          name="confirmPassword" 
-          value={form.confirmPassword} 
-          onChange={onChange} 
-          placeholder="••••••••••" 
-          required 
+        <PasswordInput
+          label="Confirm Password"
+          name="confirmPassword"
+          value={form.confirmPassword}
+          onChange={onChange}
+          placeholder="••••••••••"
+          required
           isValid={form.confirmPassword === form.password && form.confirmPassword}
           error={
-            form.confirmPassword && form.confirmPassword !== form.password 
-              ? 'Mật khẩu xác nhận không khớp' 
+            form.confirmPassword && form.confirmPassword !== form.password
+              ? 'Mật khẩu xác nhận không khớp'
               : null
           }
         />
@@ -250,19 +262,36 @@ export default function Register() {
             name="agree"
             checked={form.agree}
             onChange={(v) => setForm({ ...form, agree: v })}
-            label={<span>Tôi đồng ý với tất cả <a className="text-blue-600 hover:underline" href="#" onClick={(e)=>e.preventDefault()}>Terms</a> and <a className="text-blue-600 hover:underline" href="#" onClick={(e)=>e.preventDefault()}>Privacy Policies</a></span>}
+            label={
+              <span>
+                Tôi đồng ý với tất cả{" "}
+                <a className="text-blue-600 hover:underline" href="#" onClick={(e)=>e.preventDefault()}>Terms</a>
+                {" "}and{" "}
+                <a className="text-blue-600 hover:underline" href="#" onClick={(e)=>e.preventDefault()}>Privacy Policies</a>
+              </span>
+            }
           />
         </div>
 
-        <button disabled={loading} className="w-full py-3 text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60">
+        <button
+          disabled={loading}
+          className="w-full py-3 text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+        >
           {loading ? 'Creating...' : 'Create account'}
         </button>
 
-        <p className="text-sm text-center text-gray-500">Already have an account? <a href="/login" className="font-medium text-blue-600 hover:underline">Login</a></p>
+        <p className="text-sm text-center text-gray-500">
+          Already have an account?{" "}
+          <a href="/login" className="font-medium text-blue-600 hover:underline">Login</a>
+        </p>
 
         <DividerWithText>Or Sign up with</DividerWithText>
 
-        <SocialAuthButtons onFacebook={()=>{}} onGoogle={()=>{}} onApple={()=>{}} />
+        <SocialAuthButtons
+          onFacebook={() => {}}
+          onGoogle={handleGoogleRegister}
+          onApple={() => {}}
+        />
       </form>
     </AuthLayout>
   );
