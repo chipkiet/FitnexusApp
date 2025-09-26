@@ -27,6 +27,7 @@ export const endpoints = {
     checkUsername: "/api/auth/check-username",
     checkEmail: "/api/auth/check-email",
     checkPhone: "/api/auth/check-phone",
+    forgot: "/api/auth/forgot-password",
   },
 
   oauth: {
