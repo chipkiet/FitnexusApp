@@ -29,7 +29,10 @@ router.get(
 
 /** 3) Trả user từ session cho FE (giữ nguyên) */
 router.get("/me", (req, res) => {
-  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
   res.set("Pragma", "no-cache");
   res.set("Expires", "0");
   res.set("Surrogate-Control", "no-store");
@@ -38,7 +41,8 @@ router.get("/me", (req, res) => {
     return res.status(401).json({ message: "Unauthenticated" });
   }
 
-  const plain = typeof req.user?.toJSON === "function" ? req.user.toJSON() : req.user;
+  const plain =
+    typeof req.user?.toJSON === "function" ? req.user.toJSON() : req.user;
   const { passwordHash, providerId, ...safe } = plain || {};
   return res.json({ user: safe });
 });
