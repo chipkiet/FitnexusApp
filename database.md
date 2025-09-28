@@ -65,13 +65,13 @@ Table UserProgress {
   progress_id INT [pk, increment]
   user_id INT [ref: > Users.user_id, not null] // Mối quan hệ 1
   date_recorded DATE [not null]
-  weight_kg DECIMAL(5, 2)
-  height_cm DECIMAL(5, 1)
-  chest_cm DECIMAL(5, 1) [null]
-  waist_cm DECIMAL(5, 1) [null]
-  biceps_cm DECIMAL(5, 1) [null]
-  thigh_cm DECIMAL(5, 1) [null]
-  body_fat_percentage DECIMAL(4, 2) [null]
+  weight DECIMAL(5, 2)
+  height DECIMAL(5, 1)
+  chest DECIMAL(5, 1) [null]
+  waist DECIMAL(5, 1) [null]
+  biceps DECIMAL(5, 1) [null]
+  thigh DECIMAL(5, 1) [null]
+  body_fat_level DECIMAL(4, 2) [null]
   notes TEXT
   created_at TIMESTAMP [default: `now()`]
 }
