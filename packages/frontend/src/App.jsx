@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/auth.context.jsx";
 
@@ -9,13 +9,15 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import VerifyCode from "./pages/VerifyCode.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import DashboardPreview from "./pages/DashboardPreview.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
 
+// Admin layout & pages
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import AdminOverview from "./pages/admin/Overview.jsx";
 import AdminProjects from "./pages/admin/Projects.jsx";
 import AdminUsers from "./pages/AdminUsers.jsx";
 import AdminUserDetail from "./pages/admin/UserDetail.jsx";
-// ⛔ ĐÃ TÁCH NÊN KHÔNG DÙNG NỮA: import AdminRolePlan from "./pages/admin/RolePlan.jsx";
+// ⛔ ĐÃ TÁCH: bỏ AdminRolePlan
 import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
 import AdminContentManage from "./pages/admin/ContentManage.jsx";
@@ -28,7 +30,7 @@ import Role from "./pages/admin/Role.jsx";
 import Plan from "./pages/admin/Plan.jsx";
 
 function PrivateRoute({ children }) {
-  const { user, loading } = useAuth(); // không dùng token vì context không expose
+  const { user, loading } = useAuth();
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -45,6 +47,15 @@ function AdminRoute({ children }) {
 }
 
 function App() {
+  useEffect(() => {
+    // Debug listener để xem FE có nhận được message từ popup Google không
+    const handler = (e) => {
+      console.log("oauth msg:", e.origin, e.data);
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
   return (
     <AuthProvider>
       <Router>
@@ -66,7 +77,7 @@ function App() {
             }
           />
 
-          {/* Admin pages (nested) */}
+          {/* Admin pages (role-protected, nested) */}
           <Route
             path="/admin"
             element={

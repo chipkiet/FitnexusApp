@@ -4,6 +4,7 @@ import { useAuth } from "../context/auth.context.jsx";
 import { getAdminUsers, patchUserRole } from "../lib/api.js";
 
 const PLANS = ["ALL", "FREE", "PREMIUM"];
+const ROLES = ["USER", "TRAINER", "ADMIN"];
 
 export default function AdminUsers() {
   const { user } = useAuth();
@@ -19,7 +20,7 @@ export default function AdminUsers() {
   const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState(null);
 
-  // Lấy plan từ URL và sync vào state
+  // Sync plan từ URL vào state
   useEffect(() => {
     const p = (searchParams.get("plan") || "ALL").toUpperCase();
     setPlanFilter(PLANS.includes(p) ? p : "ALL");
@@ -60,9 +61,7 @@ export default function AdminUsers() {
     try {
       setSavingId(id);
       await patchUserRole(id, role);
-      setItems((prev) =>
-        prev.map((u) => (u.user_id === id ? { ...u, role } : u))
-      );
+      setItems((prev) => prev.map((u) => (u.user_id === id ? { ...u, role } : u)));
     } catch (e) {
       alert(e?.response?.data?.message || "Update role failed");
     } finally {
@@ -80,7 +79,7 @@ export default function AdminUsers() {
         Logged in as: {user?.username} ({user?.role})
       </div>
 
-      {/* Chỉ còn ô Search (filter Plan nằm ở Sidebar) */}
+      {/* Search */}
       <form className="flex gap-2 mb-4" onSubmit={onSearch}>
         <input
           value={search}
@@ -106,6 +105,7 @@ export default function AdminUsers() {
               <th className="text-left p-2">ID</th>
               <th className="text-left p-2">Username</th>
               <th className="text-left p-2">Email</th>
+              <th className="text-left p-2">Role</th>
               <th className="text-left p-2">Plan</th>
               <th className="text-left p-2">Status</th>
               <th className="text-left p-2">Last Login</th>
@@ -113,23 +113,27 @@ export default function AdminUsers() {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td className="p-3" colSpan={6}>
-                  Loading...
-                </td>
-              </tr>
+              <tr><td className="p-3" colSpan={7}>Loading...</td></tr>
             ) : items.length === 0 ? (
-              <tr>
-                <td className="p-3" colSpan={6}>
-                  No users
-                </td>
-              </tr>
+              <tr><td className="p-3" colSpan={7}>No users</td></tr>
             ) : (
               items.map((u) => (
                 <tr key={u.user_id} className="border-t">
                   <td className="p-2">{u.user_id}</td>
                   <td className="p-2">{u.username}</td>
                   <td className="p-2">{u.email}</td>
+                  <td className="p-2">
+                    <select
+                      className="border rounded px-2 py-1"
+                      value={u.role}
+                      disabled={savingId === u.user_id}
+                      onChange={(e) => onChangeRole(u.user_id, e.target.value)}
+                    >
+                      {ROLES.map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="p-2">{u.plan}</td>
                   <td className="p-2">{u.status}</td>
                   <td className="p-2">

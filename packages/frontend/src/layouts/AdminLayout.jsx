@@ -23,11 +23,9 @@ export default function AdminLayout() {
   const location = useLocation();
   const { user, logout } = useAuth();
 
-  // Query params cho highlight submenu
-  const currentRole =
-    (new URLSearchParams(location.search).get("role") || "ALL").toUpperCase();
-  const currentPlan =
-    (new URLSearchParams(location.search).get("plan") || "ALL").toUpperCase();
+  // Query params để highlight submenu
+  const currentRole = (new URLSearchParams(location.search).get("role") || "ALL").toUpperCase();
+  const currentPlan = (new URLSearchParams(location.search).get("plan") || "ALL").toUpperCase();
 
   // Mở/đóng các section lớn
   const [open, setOpen] = useState({
@@ -42,9 +40,7 @@ export default function AdminLayout() {
   const [openRoleSub, setOpenRoleSub] = useState(false);
   const [openPlanSub, setOpenPlanSub] = useState(false);
 
-  const isActivePath = (to) =>
-    location.pathname === to || location.pathname.startsWith(to + "/");
-
+  const isActivePath = (to) => location.pathname === to || location.pathname.startsWith(to + "/");
   const toggle = (key) => setOpen((s) => ({ ...s, [key]: !s[key] }));
 
   const linkClass = ({ isActive }) =>
@@ -59,10 +55,10 @@ export default function AdminLayout() {
         icon: Users,
         label: "User Manage",
         children: [
-          { icon: UserRound, label: "All Users", to: "/admin/users" }, // link đơn
+          { icon: UserRound, label: "All Users", to: "/admin/users" },
           { icon: IdCard, label: "User Detail", to: "/admin/user-detail" },
-          { icon: IdCard, label: "Role", to: "/admin/role" }, // có submenu
-          { icon: IdCard, label: "Plan", to: "/admin/plan" }, // có submenu
+          { icon: IdCard, label: "Role", to: "/admin/role" }, // trang tách riêng
+          { icon: IdCard, label: "Plan", to: "/admin/plan" }, // trang tách riêng
           { icon: Unlock, label: "Lock & Unlock", to: "/admin/lock-unlock" },
           { icon: KeyRound, label: "Reset password", to: "/admin/reset-password" },
         ],
@@ -159,9 +155,7 @@ export default function AdminLayout() {
                       {sec.label}
                     </span>
                     <ChevronRight
-                      className={`h-4 w-4 transition-transform ${
-                        open[sec.key] ? "rotate-90" : ""
-                      }`}
+                      className={`h-4 w-4 transition-transform ${open[sec.key] ? "rotate-90" : ""}`}
                     />
                   </button>
 
@@ -171,7 +165,7 @@ export default function AdminLayout() {
                         const isRole = item.to === "/admin/role";
                         const isPlan = item.to === "/admin/plan";
 
-                        // All Users & các item thường khác
+                        // Các item thường (không có submenu)
                         if (!isRole && !isPlan) {
                           return (
                             <NavLink key={item.to} to={item.to} className={linkClass} end>
@@ -180,7 +174,7 @@ export default function AdminLayout() {
                           );
                         }
 
-                        // ===== Role (USER / TRAINER / ADMIN) =====
+                        // ===== Role submenu (USER / TRAINER / ADMIN) =====
                         if (isRole) {
                           return (
                             <div key={item.to} className="mb-1">
@@ -190,9 +184,7 @@ export default function AdminLayout() {
                                   end
                                   className={({ isActive }) =>
                                     `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
-                                      isActive && currentRole === "ALL"
-                                        ? "bg-gray-100 font-medium"
-                                        : ""
+                                      isActive && currentRole === "ALL" ? "bg-gray-100 font-medium" : ""
                                     }`
                                   }
                                 >
@@ -220,9 +212,7 @@ export default function AdminLayout() {
                                     to="/admin/role?role=USER"
                                     className={({ isActive }) =>
                                       `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
-                                        isActive && currentRole === "USER"
-                                          ? "bg-gray-100 font-medium"
-                                          : ""
+                                        isActive && currentRole === "USER" ? "bg-gray-100 font-medium" : ""
                                       }`
                                     }
                                   >
@@ -232,9 +222,7 @@ export default function AdminLayout() {
                                     to="/admin/role?role=TRAINER"
                                     className={({ isActive }) =>
                                       `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
-                                        isActive && currentRole === "TRAINER"
-                                          ? "bg-gray-100 font-medium"
-                                          : ""
+                                        isActive && currentRole === "TRAINER" ? "bg-gray-100 font-medium" : ""
                                       }`
                                     }
                                   >
@@ -244,9 +232,7 @@ export default function AdminLayout() {
                                     to="/admin/role?role=ADMIN"
                                     className={({ isActive }) =>
                                       `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
-                                        isActive && currentRole === "ADMIN"
-                                          ? "bg-gray-100 font-medium"
-                                          : ""
+                                        isActive && currentRole === "ADMIN" ? "bg-gray-100 font-medium" : ""
                                       }`
                                     }
                                   >
@@ -258,7 +244,7 @@ export default function AdminLayout() {
                           );
                         }
 
-                        // ===== Plan (FREE / PREMIUM) =====
+                        // ===== Plan submenu (FREE / PREMIUM) =====
                         if (isPlan) {
                           return (
                             <div key={item.to} className="mb-1">
@@ -268,9 +254,7 @@ export default function AdminLayout() {
                                   end
                                   className={({ isActive }) =>
                                     `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
-                                      isActive && currentPlan === "ALL"
-                                        ? "bg-gray-100 font-medium"
-                                        : ""
+                                      isActive && currentPlan === "ALL" ? "bg-gray-100 font-medium" : ""
                                     }`
                                   }
                                 >
@@ -298,9 +282,7 @@ export default function AdminLayout() {
                                     to="/admin/plan?plan=FREE"
                                     className={({ isActive }) =>
                                       `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
-                                        isActive && currentPlan === "FREE"
-                                          ? "bg-gray-100 font-medium"
-                                          : ""
+                                        isActive && currentPlan === "FREE" ? "bg-gray-100 font-medium" : ""
                                       }`
                                     }
                                   >
@@ -310,9 +292,7 @@ export default function AdminLayout() {
                                     to="/admin/plan?plan=PREMIUM"
                                     className={({ isActive }) =>
                                       `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
-                                        isActive && currentPlan === "PREMIUM"
-                                          ? "bg-gray-100 font-medium"
-                                          : ""
+                                        isActive && currentPlan === "PREMIUM" ? "bg-gray-100 font-medium" : ""
                                       }`
                                     }
                                   >
@@ -346,10 +326,7 @@ export default function AdminLayout() {
             </div>
             <div className="flex items-center gap-3 text-sm text-gray-700">
               <span>{user?.role}</span>
-              <button
-                onClick={logout}
-                className="px-3 py-1 border rounded hover:bg-gray-50"
-              >
+              <button onClick={logout} className="px-3 py-1 border rounded hover:bg-gray-50">
                 Logout
               </button>
             </div>
@@ -377,8 +354,7 @@ export default function AdminLayout() {
                 <Users className="h-3.5 w-3.5" />
               </span>
               <div>
-                New user registered.{" "}
-                <span className="text-gray-400">59 minutes ago</span>
+                New user registered. <span className="text-gray-400">59 minutes ago</span>
               </div>
             </li>
           </ul>
