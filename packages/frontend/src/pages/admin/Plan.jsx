@@ -1,30 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useAuth } from "../context/auth.context.jsx";
-import { getAdminUsers, patchUserRole } from "../lib/api.js";
+import { useAuth } from "../../context/auth.context.jsx";
+import { getAdminUsers, patchUserPlan } from "../../lib/api.js";
+import { Pencil } from "lucide-react";
 
-const PLANS = ["ALL", "FREE", "PREMIUM"];
+const PLANS = ["FREE", "PREMIUM"];
 
-export default function AdminUsers() {
+export default function Plan() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const currentPlan = (searchParams.get("plan") || "ALL").toUpperCase();
 
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(20);
   const [offset, setOffset] = useState(0);
   const [search, setSearch] = useState("");
-  const [planFilter, setPlanFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState(null);
 
-  // Lấy plan từ URL và sync vào state
-  useEffect(() => {
-    const p = (searchParams.get("plan") || "ALL").toUpperCase();
-    setPlanFilter(PLANS.includes(p) ? p : "ALL");
-    setOffset(0);
-  }, [searchParams]);
+  const [editingId, setEditingId] = useState(null);
+  const [savingId, setSavingId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -34,7 +30,7 @@ export default function AdminUsers() {
         limit,
         offset,
         search,
-        plan: planFilter !== "ALL" ? planFilter : undefined,
+        plan: currentPlan !== "ALL" ? currentPlan : undefined,
       });
       setItems(res?.data?.items || []);
       setTotal(res?.data?.total || 0);
@@ -48,7 +44,7 @@ export default function AdminUsers() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [limit, offset, planFilter]);
+  }, [limit, offset, currentPlan]);
 
   const onSearch = (e) => {
     e.preventDefault();
@@ -56,15 +52,14 @@ export default function AdminUsers() {
     load();
   };
 
-  const onChangeRole = async (id, role) => {
+  const handleUpdatePlan = async (id, newPlan) => {
     try {
       setSavingId(id);
-      await patchUserRole(id, role);
-      setItems((prev) =>
-        prev.map((u) => (u.user_id === id ? { ...u, role } : u))
-      );
+      await patchUserPlan(id, newPlan);
+      setEditingId(null);
+      await load();
     } catch (e) {
-      alert(e?.response?.data?.message || "Update role failed");
+      alert(e?.response?.data?.message || "Update plan failed");
     } finally {
       setSavingId(null);
     }
@@ -75,12 +70,12 @@ export default function AdminUsers() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">Admin - Users</h1>
+      <h1 className="text-2xl font-semibold mb-4">Plan</h1>
       <div className="text-sm text-gray-600 mb-4">
         Logged in as: {user?.username} ({user?.role})
       </div>
 
-      {/* Chỉ còn ô Search (filter Plan nằm ở Sidebar) */}
+      {/* Search box */}
       <form className="flex gap-2 mb-4" onSubmit={onSearch}>
         <input
           value={search}
@@ -93,12 +88,11 @@ export default function AdminUsers() {
         </button>
       </form>
 
-      {error && (
-        <div className="mb-3 text-red-600 text-sm">{error.message || "Error"}</div>
-      )}
+      {error && <div className="mb-3 text-red-600 text-sm">{error.message || "Error"}</div>}
 
       <div className="mb-3 text-sm text-gray-600">Total: {total}</div>
 
+      {/* Table */}
       <div className="overflow-x-auto border rounded">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50">
@@ -113,24 +107,57 @@ export default function AdminUsers() {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td className="p-3" colSpan={6}>
-                  Loading...
-                </td>
-              </tr>
+              <tr><td className="p-3" colSpan={6}>Loading...</td></tr>
             ) : items.length === 0 ? (
-              <tr>
-                <td className="p-3" colSpan={6}>
-                  No users
-                </td>
-              </tr>
+              <tr><td className="p-3" colSpan={6}>No users</td></tr>
             ) : (
               items.map((u) => (
                 <tr key={u.user_id} className="border-t">
                   <td className="p-2">{u.user_id}</td>
                   <td className="p-2">{u.username}</td>
                   <td className="p-2">{u.email}</td>
-                  <td className="p-2">{u.plan}</td>
+
+                  {/* Plan cell */}
+                  <td className="p-2">
+                    {editingId === u.user_id ? (
+                      <div className="flex gap-2">
+                        {PLANS.map((p) => (
+                          <button
+                            key={p}
+                            disabled={savingId === u.user_id}
+                            onClick={() => handleUpdatePlan(u.user_id, p)}
+                            className={`px-2 py-1 rounded border ${
+                              u.plan === p
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-100 hover:bg-gray-200"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="px-2 py-1 text-gray-500 hover:text-red-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>{u.plan}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(u.user_id)}
+                          className="text-gray-500 hover:text-blue-600"
+                          title="Edit plan"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </td>
+
                   <td className="p-2">{u.status}</td>
                   <td className="p-2">
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "-"}
@@ -151,9 +178,7 @@ export default function AdminUsers() {
         >
           Prev
         </button>
-        <span className="text-sm">
-          Page {page} / {pages}
-        </span>
+        <span className="text-sm">Page {page} / {pages}</span>
         <button
           className="px-3 py-1 border rounded disabled:opacity-50"
           onClick={() => setOffset(offset + limit)}
@@ -170,9 +195,7 @@ export default function AdminUsers() {
           }}
         >
           {[10, 20, 50, 100].map((n) => (
-            <option key={n} value={n}>
-              {n}/page
-            </option>
+            <option key={n} value={n}>{n}/page</option>
           ))}
         </select>
       </div>

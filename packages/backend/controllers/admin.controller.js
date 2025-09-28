@@ -1,20 +1,69 @@
 import { Op } from 'sequelize';
 import User from '../models/user.model.js';
 
+export async function updateUserPlan(req, res) {
+  try {
+    const userId = req.params.id;
+    const { plan } = req.body;
+
+    // Validate
+    const nextPlan = String(plan || '').trim().toUpperCase();
+    if (!['FREE', 'PREMIUM'].includes(nextPlan)) {
+      return res.status(422).json({ success: false, message: 'Invalid plan' });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.plan = nextPlan;
+    await user.save({ fields: ['plan'] });
+
+    return res.json({
+      success: true,
+      message: 'Plan updated',
+      data: {
+        user: {
+          user_id: user.user_id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          plan: user.plan,
+          status: user.status,
+          updated_at: user.updated_at,
+        },
+      },
+    });
+  } catch (err) {
+    console.error('Admin updateUserPlan error:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+}
 export async function listUsers(req, res) {
   try {
-    const limit = req.query.limit || 50;
-    const offset = req.query.offset || 0;
-    const search = req.query.search || '';
-
+    // parse & sanitize
+    const limit = Math.max(1, parseInt(req.query.limit ?? '50', 10));
+    const offset = Math.max(0, parseInt(req.query.offset ?? '0', 10));
+    const search = (req.query.search ?? '').trim();
+    const planRaw = (req.query.plan ?? '').toString().trim().toUpperCase();
+   const roleRaw = (req.query.role ?? '').toString().trim().toUpperCase(); // NEW
     const where = {};
+
+    // search theo username/email
     if (search) {
       where[Op.or] = [
-        { username: { [Op.iLike]: `%${search}%` } },
+        { username: { [Op.iLike]: `%${search}%` } }, // Postgres: iLike = case-insensitive
         { email: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
+    if (['FREE', 'PREMIUM'].includes(planRaw)) {
+      where.plan = planRaw;
+    }
+    if (['USER', 'TRAINER', 'ADMIN'].includes(roleRaw)) {
+      where.role = roleRaw;
+    }
     const { rows, count } = await User.findAndCountAll({
       where,
       limit,
@@ -33,14 +82,21 @@ export async function listUsers(req, res) {
       ],
     });
 
-    return res.json({ success: true, data: { items: rows, total: count, limit, offset } });
+    return res.json({
+      success: true,
+      data: {
+        items: rows,
+        total: count,
+        limit,
+        offset,
+      },
+    });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('Admin listUsers error:', err);
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
-
 export async function updateUserRole(req, res) {
   try {
     const userId = req.params.id;
@@ -70,7 +126,6 @@ export async function updateUserRole(req, res) {
       },
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error('Admin updateUserRole error:', err);
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }

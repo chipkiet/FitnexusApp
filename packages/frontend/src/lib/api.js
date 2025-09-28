@@ -30,6 +30,7 @@ export const endpoints = {
   admin: {
     users: "/api/admin/users",
     userRole: (id) => `/api/admin/users/${id}/role`,
+    userPlan: (id) => `/api/admin/users/${id}/plan`,
   },
 };
 
@@ -213,7 +214,10 @@ export const checkUsernameAvailability = async (username) => {
     throw error.response?.data || error;
   }
 };
-
+export const patchUserPlan = async (userId, plan) => {
+  const res = await api.patch(endpoints.admin.userPlan(userId), { plan });
+  return res.data;
+};
 export const checkEmailAvailability = async (email) => {
   try {
     const response = await api.get(endpoints.auth.checkEmail, {
@@ -239,12 +243,21 @@ export const checkPhoneAvailability = async (phone) => {
 export default api;
 
 // ===== Admin APIs (minimal) =====
-export const getAdminUsers = async ({ limit = 50, offset = 0, search = "" } = {}) => {
+export const getAdminUsers = async ({
+  limit = 50,
+  offset = 0,
+  search = "",
+  plan,
+  role, // NEW
+} = {}) => {
   const params = { limit, offset };
   if (search) params.search = search;
+  if (plan && plan !== "ALL") params.plan = String(plan).toUpperCase();
+  if (role && role !== "ALL") params.role = String(role).toUpperCase(); // NEW
   const res = await api.get(endpoints.admin.users, { params });
   return res.data;
 };
+
 
 export const patchUserRole = async (userId, role) => {
   const res = await api.patch(endpoints.admin.userRole(userId), { role });

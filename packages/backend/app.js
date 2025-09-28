@@ -37,7 +37,7 @@ app.use(
       'http://localhost:5179',
     ],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
@@ -49,7 +49,7 @@ app.use(express.urlencoded({ extended: true, limit: '200kb' }));
 // --- Rate limit cho tất cả /api/auth/*
 const authLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 phút
-  max: 10, // 10 req / IP / phút
+  max: isDev ? 1000 : 10, // 10 req / IP / phút
   standardHeaders: true,
   legacyHeaders: false,
   message: {
