@@ -16,6 +16,7 @@ Table Users {
   updated_at TIMESTAMP
   last_login_at TIMESTAMP
   user_plan varchar(20) [not null, default: 'FREE'] 
+  onboarding_completed_at TIMESTAMP                // đánh dấu đã hoàn tất onboarding
 }
 
 // ==== Bảng Thư viện & Giải phẫu ====
@@ -134,4 +135,55 @@ Table PasswordResets {
   Note: 'INDEX(user_id), INDEX(token_hash)'
 }
 
+Table OnboardingSteps {
+  step_id INT [pk, increment]
+  step_key VARCHAR(50) [unique, not null]      // ví dụ: 'step-bodytype', 'step-goal'
+  title VARCHAR(120) [not null]
+  order_index INT [not null]
+  is_active BOOLEAN [not null, default: true]
+  created_at TIMESTAMP [default: `now()`]
+  updated_at TIMESTAMP
+  // Ghi chú: flow đơn giản dùng order_index để đi tuần tự; không rẽ nhánh
+  Note: 'INDEX(order_index)'
+}
+
+Table OnboardingFields {
+  field_id INT [pk, increment]
+  step_id INT [ref: > OnboardingSteps.step_id, not null] // quan hệ tới bước
+  field_key VARCHAR(50) [not null]            // ví dụ: body_type, goal_steps, height_cm
+  label VARCHAR(120) [not null]
+  input_type VARCHAR(30) [not null]           // radio | select | number | date | text ...
+  required BOOLEAN [not null, default: true]
+  order_index INT                              // vị trí hiển thị trong bước
+  metadata JSONB                               // min/max/step, presets, units, placeholder..., có thể chứa mapping sang Users/UserProgress
+  created_at TIMESTAMP [default: `now()`]
+  updated_at TIMESTAMP
+  // Mỗi field_key là duy nhất trong 1 step
+  Note: 'UNIQUE(step_id, field_key); INDEX(step_id); INDEX(order_index)'
+}
+
+
+Table OnboardingSessions {
+  session_id UUID [pk]                         // dùng UUID cho phiên
+  user_id INT [ref: > Users.user_id, not null]
+  current_step_key VARCHAR(50)                 // đang dừng ở bước nào, BE có thể gợi ý bước tiếp theo
+  is_completed BOOLEAN [not null, default: false]
+  created_at TIMESTAMP [default: `now()`]
+  updated_at TIMESTAMP
+  completed_at TIMESTAMP
+  // Mỗi user chỉ có 1 session ACTIVE/không hoàn tất (enforce ở app hoặc partial index)
+  Note: 'INDEX(user_id); INDEX(is_completed)'
+}
+
+Table OnboardingAnswers {
+  answer_id INT [pk, increment]
+  session_id UUID [ref: > OnboardingSessions.session_id, not null]
+  step_id INT [ref: > OnboardingSteps.step_id, not null]
+  answers JSONB [not null]                     // payload của CẢ BƯỚC (per-step), ví dụ {"body_type":"SKINNY"}
+  created_at TIMESTAMP [default: `now()`]
+  updated_at TIMESTAMP
+
+  // Lưu THEO BƯỚC: duy nhất một bản ghi cho mỗi (session, step)
+  Note: 'UNIQUE(session_id, step_id); INDEX(session_id); INDEX(step_id)'
+}
 
