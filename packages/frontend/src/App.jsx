@@ -3,31 +3,26 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { AuthProvider, useAuth } from "./context/auth.context.jsx";
 
 import Register from "./pages/Register.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
 import Login from "./pages/Login.jsx";
+import Home from "./pages/Home.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import VerifyCode from "./pages/VerifyCode.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
-import DashboardPreview from "./pages/DashboardPreview.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 
 // Admin layout & pages
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import AdminOverview from "./pages/admin/Overview.jsx";
-import AdminProjects from "./pages/admin/Projects.jsx";
-import AdminUsers from "./pages/AdminUsers.jsx";
 import AdminUserDetail from "./pages/admin/UserDetail.jsx";
-// ⛔ ĐÃ TÁCH: bỏ AdminRolePlan
-import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
-import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
 import AdminContentManage from "./pages/admin/ContentManage.jsx";
-import AdminTrainerManage from "./pages/admin/TrainerManage.jsx";
 import AdminFinancialManage from "./pages/admin/FinancialManage.jsx";
-import AdminSocial from "./pages/admin/Social.jsx";
-
-// ✅ Trang mới đã tách riêng
 import Role from "./pages/admin/Role.jsx";
 import Plan from "./pages/admin/Plan.jsx";
+import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
+import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
+
+// (Optional) trang quản lý users nếu bạn có file này
+import AdminUsers from "./pages/AdminUsers.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -48,7 +43,7 @@ function AdminRoute({ children }) {
 
 function App() {
   useEffect(() => {
-    // Debug listener để xem FE có nhận được message từ popup Google không
+    // Debug listener để xem FE có nhận message từ popup OAuth hay không
     const handler = (e) => {
       console.log("oauth msg:", e.origin, e.data);
     };
@@ -67,17 +62,17 @@ function App() {
           <Route path="/verify-code" element={<VerifyCode />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Dashboard (user) */}
+          {/* Main app routes */}
           <Route
-            path="/dashboard"
+            path="/"
             element={
               <PrivateRoute>
-                <Dashboard />
+                <Home />
               </PrivateRoute>
             }
           />
 
-          {/* Admin pages (role-protected, nested) */}
+          {/* Admin pages */}
           <Route
             path="/admin"
             element={
@@ -87,23 +82,19 @@ function App() {
             }
           >
             <Route index element={<AdminOverview />} />
-            <Route path="projects" element={<AdminProjects />} />
-            <Route path="users" element={<AdminUsers />} />
             <Route path="user-detail" element={<AdminUserDetail />} />
-            {/* ⛔ BỎ: <Route path="role-plan" element={<AdminRolePlan />} /> */}
             <Route path="role" element={<Role />} />
             <Route path="plan" element={<Plan />} />
             <Route path="lock-unlock" element={<AdminLockUnlock />} />
             <Route path="reset-password" element={<AdminResetPassword />} />
             <Route path="content" element={<AdminContentManage />} />
-            <Route path="trainers" element={<AdminTrainerManage />} />
             <Route path="finance" element={<AdminFinancialManage />} />
-            <Route path="social" element={<AdminSocial />} />
+            {/* Thêm route này nếu bạn dùng trang AdminUsers */}
+            <Route path="users" element={<AdminUsers />} />
           </Route>
 
-          {/* Public landing / fallback */}
-          <Route path="/" element={<DashboardPreview />} />
-          <Route path="*" element={<DashboardPreview />} />
+          {/* Catch all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AuthProvider>
