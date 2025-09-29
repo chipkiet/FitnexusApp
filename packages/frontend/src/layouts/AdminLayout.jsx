@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
-import { useAuth } from '../context/auth.context.jsx';
+import { useAuth } from "../context/auth.context.jsx";
 import {
   ChevronRight,
   Home,
@@ -19,17 +19,15 @@ import {
   Sun,
 } from "lucide-react";
 
-
-// Tailwind notes
-// - Sidebar and notifications use sticky positioning to match the reference screenshot
-// - Varied font sizes, soft borders and rounded corners for a clean admin look
-// - Active nav items are highlighted with bg-gray-100 and a subtle font weight
-// - Collapsible groups show an arrow that rotates when open
-
 export default function AdminLayout() {
-
   const location = useLocation();
+  const { user, logout } = useAuth();
 
+  // Query params để highlight submenu
+  const currentRole = (new URLSearchParams(location.search).get("role") || "ALL").toUpperCase();
+  const currentPlan = (new URLSearchParams(location.search).get("plan") || "ALL").toUpperCase();
+
+  // Mở/đóng các section lớn
   const [open, setOpen] = useState({
     user: true,
     content: false,
@@ -38,9 +36,11 @@ export default function AdminLayout() {
     social: false,
   });
 
-  const {user, logout} = useAuth();
-  const isActivePath = (to) => location.pathname === to || location.pathname.startsWith(to + "/");
+  // Submenu cho Role và Plan
+  const [openRoleSub, setOpenRoleSub] = useState(false);
+  const [openPlanSub, setOpenPlanSub] = useState(false);
 
+  const isActivePath = (to) => location.pathname === to || location.pathname.startsWith(to + "/");
   const toggle = (key) => setOpen((s) => ({ ...s, [key]: !s[key] }));
 
   const linkClass = ({ isActive }) =>
@@ -57,7 +57,8 @@ export default function AdminLayout() {
         children: [
           { icon: UserRound, label: "All Users", to: "/admin/users" },
           { icon: IdCard, label: "User Detail", to: "/admin/user-detail" },
-          { icon: IdCard, label: "Role & Plan", to: "/admin/role-plan" },
+          { icon: IdCard, label: "Role", to: "/admin/role" }, // trang tách riêng
+          { icon: IdCard, label: "Plan", to: "/admin/plan" }, // trang tách riêng
           { icon: Unlock, label: "Lock & Unlock", to: "/admin/lock-unlock" },
           { icon: KeyRound, label: "Reset password", to: "/admin/reset-password" },
         ],
@@ -92,7 +93,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen text-gray-800 bg-gray-50">
-      {/* Top header bar (full width) */}
+      {/* Top header bar */}
       <header className="sticky top-0 z-40 bg-white border-b">
         <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between px-4">
           <div className="flex items-center gap-3">
@@ -157,13 +158,154 @@ export default function AdminLayout() {
                       className={`h-4 w-4 transition-transform ${open[sec.key] ? "rotate-90" : ""}`}
                     />
                   </button>
+
                   {open[sec.key] && (
                     <div className="pl-2 mt-1 ml-2 border-l">
-                      {sec.children.map((item) => (
-                        <NavLink key={item.to} to={item.to} className={linkClass}>
-                          {item.icon && <item.icon className="w-4 h-4" />} {item.label}
-                        </NavLink>
-                      ))}
+                      {sec.children.map((item) => {
+                        const isRole = item.to === "/admin/role";
+                        const isPlan = item.to === "/admin/plan";
+
+                        // Các item thường (không có submenu)
+                        if (!isRole && !isPlan) {
+                          return (
+                            <NavLink key={item.to} to={item.to} className={linkClass} end>
+                              {item.icon && <item.icon className="w-4 h-4" />} {item.label}
+                            </NavLink>
+                          );
+                        }
+
+                        // ===== Role submenu (USER / TRAINER / ADMIN) =====
+                        if (isRole) {
+                          return (
+                            <div key={item.to} className="mb-1">
+                              <div className="flex items-center justify-between">
+                                <NavLink
+                                  to="/admin/role"
+                                  end
+                                  className={({ isActive }) =>
+                                    `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
+                                      isActive && currentRole === "ALL" ? "bg-gray-100 font-medium" : ""
+                                    }`
+                                  }
+                                >
+                                  {item.icon && <item.icon className="w-4 h-4" />} {item.label}
+                                </NavLink>
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenRoleSub((v) => !v)}
+                                  className="mr-2 inline-flex items-center justify-center rounded hover:bg-gray-100"
+                                  style={{ width: 28, height: 28 }}
+                                  aria-label="Toggle Role submenu"
+                                >
+                                  <ChevronRight
+                                    className={`transition-transform text-gray-600 ${
+                                      openRoleSub ? "rotate-90" : ""
+                                    }`}
+                                    style={{ width: 20, height: 20 }}
+                                  />
+                                </button>
+                              </div>
+
+                              {openRoleSub && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                  <NavLink
+                                    to="/admin/role?role=USER"
+                                    className={({ isActive }) =>
+                                      `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
+                                        isActive && currentRole === "USER" ? "bg-gray-100 font-medium" : ""
+                                      }`
+                                    }
+                                  >
+                                    USER
+                                  </NavLink>
+                                  <NavLink
+                                    to="/admin/role?role=TRAINER"
+                                    className={({ isActive }) =>
+                                      `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
+                                        isActive && currentRole === "TRAINER" ? "bg-gray-100 font-medium" : ""
+                                      }`
+                                    }
+                                  >
+                                    TRAINER
+                                  </NavLink>
+                                  <NavLink
+                                    to="/admin/role?role=ADMIN"
+                                    className={({ isActive }) =>
+                                      `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
+                                        isActive && currentRole === "ADMIN" ? "bg-gray-100 font-medium" : ""
+                                      }`
+                                    }
+                                  >
+                                    ADMIN
+                                  </NavLink>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        // ===== Plan submenu (FREE / PREMIUM) =====
+                        if (isPlan) {
+                          return (
+                            <div key={item.to} className="mb-1">
+                              <div className="flex items-center justify-between">
+                                <NavLink
+                                  to="/admin/plan"
+                                  end
+                                  className={({ isActive }) =>
+                                    `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
+                                      isActive && currentPlan === "ALL" ? "bg-gray-100 font-medium" : ""
+                                    }`
+                                  }
+                                >
+                                  {item.icon && <item.icon className="w-4 h-4" />} {item.label}
+                                </NavLink>
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenPlanSub((v) => !v)}
+                                  className="mr-2 inline-flex items-center justify-center rounded hover:bg-gray-100"
+                                  style={{ width: 28, height: 28 }}
+                                  aria-label="Toggle Plan submenu"
+                                >
+                                  <ChevronRight
+                                    className={`transition-transform text-gray-600 ${
+                                      openPlanSub ? "rotate-90" : ""
+                                    }`}
+                                    style={{ width: 20, height: 20 }}
+                                  />
+                                </button>
+                              </div>
+
+                              {openPlanSub && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                  <NavLink
+                                    to="/admin/plan?plan=FREE"
+                                    className={({ isActive }) =>
+                                      `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
+                                        isActive && currentPlan === "FREE" ? "bg-gray-100 font-medium" : ""
+                                      }`
+                                    }
+                                  >
+                                    FREE
+                                  </NavLink>
+                                  <NavLink
+                                    to="/admin/plan?plan=PREMIUM"
+                                    className={({ isActive }) =>
+                                      `flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition ${
+                                        isActive && currentPlan === "PREMIUM" ? "bg-gray-100 font-medium" : ""
+                                      }`
+                                    }
+                                  >
+                                    PREMIUM
+                                  </NavLink>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        return null;
+                      })}
                     </div>
                   )}
                 </div>
@@ -174,7 +316,6 @@ export default function AdminLayout() {
 
         {/* Main content */}
         <main className="flex-1 min-w-0">
-          {/* Breadcrumb + user */}
           <div className="flex items-center justify-between px-4 bg-white border-b h-14">
             <div className="text-sm text-gray-500">
               <Link to="/admin" className="hover:underline">
@@ -184,37 +325,36 @@ export default function AdminLayout() {
               <span className="text-gray-700">Default</span>
             </div>
             <div className="flex items-center gap-3 text-sm text-gray-700">
-              <span>ADMIN</span>
-              <button onClick={logout} className="px-3 py-1 border rounded hover:bg-gray-50">Logout</button>
+              <span>{user?.role}</span>
+              <button onClick={logout} className="px-3 py-1 border rounded hover:bg-gray-50">
+                Logout
+              </button>
             </div>
           </div>
 
-          {/* Routed content */}
           <div className="p-6">
             <Outlet />
           </div>
         </main>
 
-        {/* Right notifications rail */}
+        {/* Notifications */}
         <aside className="sticky top-14 hidden h-[calc(100vh-56px)] w-80 shrink-0 border-l bg-white p-4 xl:block">
           <div className="mb-3 font-medium">Notifications</div>
           <ul className="space-y-3 text-sm text-gray-700">
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border"><Bell className="h-3.5 w-3.5"/></span>
+              <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border">
+                <Bell className="h-3.5 w-3.5" />
+              </span>
               <div>
                 You fixed a bug. <span className="text-gray-400">Just now</span>
               </div>
             </li>
             <li className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border"><Users className="h-3.5 w-3.5"/></span>
+              <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border">
+                <Users className="h-3.5 w-3.5" />
+              </span>
               <div>
                 New user registered. <span className="text-gray-400">59 minutes ago</span>
-              </div>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border"><Bell className="h-3.5 w-3.5"/></span>
-              <div>
-                You fixed a bug. <span className="text-gray-400">12 hours ago</span>
               </div>
             </li>
           </ul>

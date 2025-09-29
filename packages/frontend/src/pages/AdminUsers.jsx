@@ -1,25 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/auth.context.jsx';
-import { getAdminUsers, patchUserRole } from '../lib/api.js';
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useAuth } from "../context/auth.context.jsx";
+import { getAdminUsers, patchUserRole } from "../lib/api.js";
 
-const roles = ['USER', 'TRAINER', 'ADMIN'];
+const PLANS = ["ALL", "FREE", "PREMIUM"];
+const ROLES = ["USER", "TRAINER", "ADMIN"];
 
 export default function AdminUsers() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(20);
   const [offset, setOffset] = useState(0);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
+  const [planFilter, setPlanFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState(null);
+
+  // Sync plan từ URL vào state
+  useEffect(() => {
+    const p = (searchParams.get("plan") || "ALL").toUpperCase();
+    setPlanFilter(PLANS.includes(p) ? p : "ALL");
+    setOffset(0);
+  }, [searchParams]);
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getAdminUsers({ limit, offset, search });
+      const res = await getAdminUsers({
+        limit,
+        offset,
+        search,
+        plan: planFilter !== "ALL" ? planFilter : undefined,
+      });
       setItems(res?.data?.items || []);
       setTotal(res?.data?.total || 0);
     } catch (e) {
@@ -29,7 +46,10 @@ export default function AdminUsers() {
     }
   };
 
-  useEffect(() => { load(); }, [limit, offset]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit, offset, planFilter]);
 
   const onSearch = (e) => {
     e.preventDefault();
@@ -43,7 +63,7 @@ export default function AdminUsers() {
       await patchUserRole(id, role);
       setItems((prev) => prev.map((u) => (u.user_id === id ? { ...u, role } : u)));
     } catch (e) {
-      alert(e?.response?.data?.message || 'Update role failed');
+      alert(e?.response?.data?.message || "Update role failed");
     } finally {
       setSavingId(null);
     }
@@ -159,7 +179,7 @@ export default function AdminUsers() {
                           disabled={savingId === u.user_id}
                           onChange={(e) => onChangeRole(u.user_id, e.target.value)}
                         >
-                          {roles.map((r) => (
+                          {ROLES.map((r) => (
                             <option key={r} value={r}>{r}</option>
                           ))}
                         </select>
@@ -223,4 +243,3 @@ export default function AdminUsers() {
     </div>
   );
 }
-
