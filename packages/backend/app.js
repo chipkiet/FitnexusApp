@@ -11,6 +11,8 @@ import session from 'express-session';
 import authRouter from './routes/auth.routes.js';
 import adminRouter from './routes/admin.routes.js';
 import trainerRouter from './routes/trainer.routes.js';
+
+// từ nhánh main
 import passport from './config/passport.js';
 import googleAuthRoutes from './routes/auth.js';   // Google OAuth routes under /auth
 import onboardingRouter from './routes/onboarding.routes.js';
@@ -21,7 +23,7 @@ const app = express();
 const isDev = process.env.NODE_ENV !== 'production';
 const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-// ==== CORS (đặt trước mọi thứ khác) ====
+// ==== CORS (chỉ cấu hình 1 lần, đặt sớm) ====
 const corsOptions = {
   origin: [
     FRONTEND,
@@ -31,15 +33,8 @@ const corsOptions = {
     'http://localhost:5179',
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Cache-Control',
-    'Pragma',
-    'Expires',
-    'X-Requested-With',
-  ],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'X-Requested-With'],
   exposedHeaders: ['Set-Cookie'],
 };
 app.use(cors(corsOptions));
@@ -55,20 +50,22 @@ app.use(cookieParser());
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: true, limit: '200kb' }));
 
-// ==== Session (chỉ KHAI BÁO 1 LẦN, dùng SESSION_SECRET) ====
+// ==== Session (khai báo 1 lần) ====
 if (!process.env.SESSION_SECRET) {
   console.warn('[WARN] SESSION_SECRET is missing in .env');
 }
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev_fallback_secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,   // FE không cần đọc cookie => an toàn hơn
-    secure: false,    // đặt true khi chạy HTTPS
-    sameSite: 'lax',  // nếu FE/BE khác domain + HTTPS: 'none' + secure:true
-  },
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'dev_fallback_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false,     // đặt true khi chạy HTTPS
+      sameSite: 'lax',   // nếu FE/BE khác domain + HTTPS => 'none' + secure:true
+    },
+  })
+);
 
 // ==== Passport ====
 app.use(passport.initialize());
@@ -76,8 +73,8 @@ app.use(passport.session());
 
 // ==== Rate limit cho /api/auth ====
 const authLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
+  windowMs: 60 * 1000,              // 1 phút
+  max: isDev ? 1000 : 10,           // dev rộng tay, prod chặt hơn
   standardHeaders: true,
   legacyHeaders: false,
   message: {
