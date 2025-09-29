@@ -77,6 +77,12 @@ const User = sequelize.define('User', {
         allowNull: true,
         field: 'last_login_at',
     }
+    ,
+    onboardingCompletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'onboarding_completed_at',
+    }
 }, {
     tableName: 'users',
     timestamps: true,
