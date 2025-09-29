@@ -3,12 +3,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/auth.context.jsx";
 import loginImg from "../assets/login.png";
 import { FcGoogle } from "react-icons/fc";
-import { FaFacebook, FaApple } from "react-icons/fa";
+import { FaApple } from "react-icons/fa";
 import Alert from "../components/common/Alert.jsx";
-import { openOAuthPopup } from "../lib/openOAuthPopup.js";
 import api, { endpoints } from "../lib/api.js";
+import { setTokens } from "../lib/tokenManager.js"; // ✅ thêm
 
-//+1
 function OAuthNotFoundModal({ email, onClose, onSignup }) {
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -21,7 +20,10 @@ function OAuthNotFoundModal({ email, onClose, onSignup }) {
           <button className="flex-1 py-2 rounded-lg border hover:bg-gray-50" onClick={onClose}>
             Đăng nhập bằng cách khác
           </button>
-          <button className="flex-1 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700" onClick={onSignup}>
+          <button
+            className="flex-1 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+            onClick={onSignup}
+          >
             Đăng ký
           </button>
         </div>
@@ -29,43 +31,35 @@ function OAuthNotFoundModal({ email, onClose, onSignup }) {
     </div>
   );
 }
+
 export default function Login() {
   const [form, setForm] = useState({ identifier: "", password: "", remember: false });
   const [oauthLoading, setOauthLoading] = useState(false);
 
-  const { login, loading, error, oauthLogin } = useAuth();
+  const { login, loading, error } = useAuth();
   const navigate = useNavigate();
 
-  //+2
   const [showNotFound, setShowNotFound] = useState(false);
-const [nfEmail, setNfEmail] = useState("");
+  const [nfEmail, setNfEmail] = useState("");
 
-// đọc query do backend redirect về: /login?oauth=not_found&email=...
-const location = useLocation();
+  const location = useLocation();
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    if (q.get("oauth") === "not_found") {
+      setShowNotFound(true);
+      setNfEmail(q.get("email") || "");
+      const url = new URL(window.location.href);
+      url.searchParams.delete("oauth");
+      url.searchParams.delete("email");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [location.search]);
 
-useEffect(() => {
-  const q = new URLSearchParams(location.search);
-  if (q.get("oauth") === "not_found") {
-    setShowNotFound(true);
-    setNfEmail(q.get("email") || "");
-
-    // xoá query để F5 không hiện lại
-    const url = new URL(window.location.href);
-    url.searchParams.delete("oauth");
-    url.searchParams.delete("email");
-    window.history.replaceState({}, "", url.toString());
-  }
-}, [location.search]);
-
-// actions cho modal
-const closeNotFound = () => setShowNotFound(false);
-const goSignup = () => {
-  setShowNotFound(false);
-  navigate(`/register${nfEmail ? `?email=${encodeURIComponent(nfEmail)}` : ""}`);
-};
-
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
+  const closeNotFound = () => setShowNotFound(false);
+  const goSignup = () => {
+    setShowNotFound(false);
+    navigate(`/register${nfEmail ? `?email=${encodeURIComponent(nfEmail)}` : ""}`);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -81,8 +75,22 @@ const goSignup = () => {
         password: form.password,
         rememberMe: form.remember,
       });
+
+      // ✅ Lưu token vào tokenManager
+      const accessToken =
+        result?.data?.accessToken ||
+        result?.data?.token ||
+        result?.accessToken ||
+        result?.token;
+      const refreshToken =
+        result?.data?.refreshToken || result?.refreshToken || null;
+
+      if (accessToken) {
+        setTokens(accessToken, refreshToken, !!form.remember);
+      }
+
       const role = result?.data?.user?.role;
-      if (role === 'ADMIN') {
+      if (role === "ADMIN") {
         navigate("/admin", { replace: true });
       } else {
         navigate("/dashboard", { replace: true });
@@ -92,44 +100,21 @@ const goSignup = () => {
     }
   };
 
-// ====== Đăng nhập bằng Google (popup, không reload) ======
-// Poll session cho tới khi /api/auth/me trả 200
-async function waitForSession(maxMs = 10000, intervalMs = 400) {
-  const deadline = Date.now() + maxMs;
-
-  while (Date.now() < deadline) {
-    try {
-      // dùng axios instance => withCredentials đã bật sẵn
-      const { data } = await api.get(endpoints.auth.me, {
-        params: { t: Date.now() }, // bust cache
-        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
-      });
-
-      if (data?.success) return data; // đã có session
-    } catch (err) {
-      // 401 thì tiếp tục poll, lỗi khác thì throw để biết mà xử lý
-      if (err?.response?.status !== 401) throw err;
-    }
-    await sleep(intervalMs);
-  }
-  throw new Error("Timeout waiting for session");
-}
-
-// ====== Đăng nhập bằng Google (popup + poll, KHÔNG dùng fetch tay) ======
-const handleGoogleLogin = () => {
+  // ====== Đăng nhập bằng Google ======
+  const handleGoogleLogin = () => {
     setOauthLoading(true);
     const be = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
-    // chuyển tab hiện tại sang BE để bắt đầu OAuth
     window.location.href = `${be}/auth/google`;
   };
-
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="flex w-full max-w-4xl p-8 bg-white shadow-xl rounded-xl">
         {/* Left */}
         <div className="w-1/2 pr-8">
-          <h1 className="mb-6 text-xl font-semibold text-center text-gray-800">Your Logo</h1>
+          <h1 className="mb-6 text-xl font-semibold text-center text-gray-800">
+            Your Logo
+          </h1>
           <h2 className="text-2xl font-bold text-center text-gray-800">Login</h2>
 
           {error && (
@@ -192,13 +177,14 @@ const handleGoogleLogin = () => {
 
           <div className="flex gap-3">
             <button
-      type="button"
-      onClick={handleGoogleLogin}
-      disabled={oauthLoading}
-      className="flex items-center justify-center flex-1 gap-2 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-60"
-    > 
-      <FcGoogle size={20} />{oauthLoading ? "Đang chuyển hướng…" : "Google"}
-    </button>
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={oauthLoading}
+              className="flex items-center justify-center flex-1 gap-2 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-60"
+            >
+              <FcGoogle size={20} />
+              {oauthLoading ? "Đang chuyển hướng…" : "Google"}
+            </button>
 
             <button className="flex items-center justify-center flex-1 gap-2 py-2 border rounded-lg hover:bg-gray-50">
               <FaApple size={20} /> Apple
@@ -221,24 +207,14 @@ const handleGoogleLogin = () => {
           <img src={loginImg} alt="Login Illustration" className="w-3/4" />
         </div>
       </div>
+
       {showNotFound && (
-  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-    <div className="bg-white rounded-xl p-6 w-[420px] text-center">
-      <h2 className="text-lg font-semibold mb-2">Không tìm thấy tài khoản</h2>
-      <p className="text-sm text-gray-600 mb-4">
-        Tài khoản Google {nfEmail ? <b>{nfEmail}</b> : "vừa dùng"} chưa liên kết với FITNEXUS.
-      </p>
-      <div className="flex gap-3">
-        <button className="flex-1 py-2 rounded-lg border hover:bg-gray-50" onClick={closeNotFound}>
-          Đăng nhập bằng cách khác
-        </button>
-        <button className="flex-1 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700" onClick={goSignup}>
-          Đăng ký
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        <OAuthNotFoundModal
+          email={nfEmail}
+          onClose={closeNotFound}
+          onSignup={goSignup}
+        />
+      )}
     </div>
   );
 }

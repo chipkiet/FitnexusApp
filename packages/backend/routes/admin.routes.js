@@ -1,17 +1,23 @@
+// packages/backend/routes/admin.routes.js
 import express from 'express';
 import authGuard from '../middleware/auth.guard.js';
 import { requireAdmin } from '../middleware/role.guard.js';
 import { body, param, query, validationResult } from 'express-validator';
-import { listUsers, updateUserRole, updateUserPlan } from '../controllers/admin.controller.js';
+import {
+  listUsers,
+  updateUserRole,
+  updateUserPlan,
+  resetPassword, // <-- thêm import
+} from '../controllers/admin.controller.js';
 
 const router = express.Router();
 
-// GET /api/admin/health - ADMIN only
+/** GET /api/admin/health - ADMIN only */
 router.get('/health', authGuard, requireAdmin, (_req, res) => {
   res.json({ success: true, message: 'Admin route OK', timestamp: new Date().toISOString() });
 });
 
-// GET /api/admin/users - list users (safe fields)
+/** GET /api/admin/users - list users */
 router.get(
   '/users',
   authGuard,
@@ -40,7 +46,7 @@ router.get(
   }
 );
 
-// PATCH /api/admin/users/:id/role - update role
+/** PATCH /api/admin/users/:id/role - update role */
 router.patch(
   '/users/:id/role',
   authGuard,
@@ -58,7 +64,7 @@ router.patch(
   }
 );
 
-// PATCH /api/admin/users/:id/plan - update subscription plan
+/** PATCH /api/admin/users/:id/plan - update subscription plan */
 router.patch(
   '/users/:id/plan',
   authGuard,
@@ -76,6 +82,34 @@ router.patch(
       return res.status(422).json({ success: false, message: 'Validation error', errors: errors.array() });
     }
     return updateUserPlan(req, res, next);
+  }
+);
+
+/** POST /api/admin/users/:userId/reset-password - admin sets a new password directly */
+router.post(
+  '/users/:userId/reset-password',
+  authGuard,
+  requireAdmin,
+  [
+    param('userId').isInt({ min: 1 }).toInt(),
+    body('newPassword')
+      .isString()
+      .isLength({ min: 8 })
+      .withMessage('Password must be at least 8 chars')
+      .matches(/[A-Z]/).withMessage('Need at least 1 uppercase letter')
+      .matches(/[a-z]/).withMessage('Need at least 1 lowercase letter')
+      .matches(/\d/).withMessage('Need at least 1 digit')
+      .matches(/[\W_]/).withMessage('Need at least 1 special character'),
+    body('confirmPassword')
+      .custom((val, { req }) => val === req.body.newPassword)
+      .withMessage('Passwords do not match'),
+  ],
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ success: false, message: 'Validation error', errors: errors.array() });
+    }
+    return resetPassword(req, res, next);
   }
 );
 

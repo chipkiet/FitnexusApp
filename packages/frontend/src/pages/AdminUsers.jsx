@@ -111,38 +111,28 @@ export default function AdminUsers() {
               <th className="text-left p-2">Last Login</th>
             </tr>
           </thead>
-          <tbody>
-            {loading ? (
-              <tr><td className="p-3" colSpan={7}>Loading...</td></tr>
-            ) : items.length === 0 ? (
-              <tr><td className="p-3" colSpan={7}>No users</td></tr>
-            ) : (
-              items.map((u) => (
-                <tr key={u.user_id} className="border-t">
-                  <td className="p-2">{u.user_id}</td>
-                  <td className="p-2">{u.username}</td>
-                  <td className="p-2">{u.email}</td>
-                  <td className="p-2">
-                    <select
-                      className="border rounded px-2 py-1"
-                      value={u.role}
-                      disabled={savingId === u.user_id}
-                      onChange={(e) => onChangeRole(u.user_id, e.target.value)}
-                    >
-                      {ROLES.map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="p-2">{u.plan}</td>
-                  <td className="p-2">{u.status}</td>
-                  <td className="p-2">
-                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "-"}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
+<tbody>
+  {loading ? (
+    <tr><td className="p-3" colSpan={7}>Loading...</td></tr>
+  ) : items.length === 0 ? (
+    <tr><td className="p-3" colSpan={7}>No users</td></tr>
+  ) : (
+    items.map((u) => (
+      <tr key={u.user_id} className="border-t">
+        <td className="p-2">{u.user_id}</td>
+        <td className="p-2">{u.username}</td>
+        <td className="p-2">{u.email}</td>
+        <td className="p-2">{u.role}</td> {/* chỉ hiển thị, không cho đổi */}
+        <td className="p-2">{u.plan}</td>
+        <td className="p-2">{u.status}</td>
+        <td className="p-2">
+          {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "-"}
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
+
         </table>
       </div>
 

@@ -37,7 +37,7 @@ export async function up(queryInterface, Sequelize) {
   });
   await queryInterface.addIndex('password_resets', ['token_hash'], {
     name: 'password_resets_token_hash_idx',
-    unique: true,
+    //unique: true,
   });
   await queryInterface.addIndex('password_resets', ['expires_at'], {
     name: 'password_resets_expires_at_idx',
