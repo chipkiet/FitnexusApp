@@ -10,6 +10,7 @@ import PasswordReset from '../models/passwordReset.model.js';
  */
 export async function listUsers(req, res) {
   try {
+    // parse & sanitize
     const limitRaw = parseInt(req.query.limit ?? '50', 10);
     const offsetRaw = parseInt(req.query.offset ?? '0', 10);
     const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 50 : limitRaw), 200);
@@ -21,11 +22,16 @@ export async function listUsers(req, res) {
 
     const where = {};
 
-    // Postgres hỗ trợ Op.iLike (case-insensitive). Nếu dùng dialect khác, đổi sang Op.like.
+    // Postgres hỗ trợ Op.iLike (case-insensitive). Dialect khác dùng Op.like.
+    const iLikeOp =
+      typeof sequelize?.getDialect === 'function' && sequelize.getDialect() === 'postgres'
+        ? Op.iLike
+        : Op.like;
+
     if (search) {
       where[Op.or] = [
-        { username: { [Op.iLike]: `%${search}%` } },
-        { email: { [Op.iLike]: `%${search}%` } },
+        { username: { [iLikeOp]: `%${search}%` } },
+        { email: { [iLikeOp]: `%${search}%` } },
       ];
     }
 
@@ -148,6 +154,7 @@ export async function updateUserPlan(req, res) {
  * POST /api/admin/users/:userId/reset-password
  * Body: { newPassword, confirmPassword }
  * Yêu cầu: middleware auth đã gắn req.user và check role ADMIN ở routes.
+ * Ghi chú: Model User cần có hook hash password (beforeSave/beforeUpdate) khi field 'passwordHash' thay đổi.
  */
 export async function resetPassword(req, res) {
   try {
@@ -161,7 +168,7 @@ export async function resetPassword(req, res) {
       return res.status(400).json({ success: false, message: 'Passwords do not match' });
     }
 
-    // policy nhanh (nếu bạn có lib/passwordValidation.js thì tái sử dụng cho đồng nhất)
+    // password policy cơ bản
     const strong =
       newPassword.length >= 8 &&
       /[A-Z]/.test(newPassword) &&
@@ -184,11 +191,12 @@ export async function resetPassword(req, res) {
       });
       if (!user) return { ok: false, message: 'User not found' };
 
-      // DÙNG HOOK của model để hash (beforeUpdate đã có):
+      // DÙNG HOOK của model để hash (beforeSave/beforeUpdate)
       user.set('passwordHash', newPassword);
       user.changed('passwordHash', true);
       await user.save({ transaction: t });
-      // Log vào bảng password_resets
+
+      // Ghi log reset vào bảng password_resets
       await PasswordReset.create(
         {
           user_id: Number(userId),
@@ -200,7 +208,7 @@ export async function resetPassword(req, res) {
         { transaction: t }
       );
 
-      // (tuỳ chọn) nếu bạn có token_version ở bảng users, tăng +1 để force logout các phiên cũ
+      // (tuỳ chọn) nếu có cột token_version ở users, mở khoá comment để force logout các phiên cũ:
       // await user.increment('token_version', { by: 1, transaction: t });
 
       return { ok: true };

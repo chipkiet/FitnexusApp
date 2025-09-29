@@ -7,7 +7,7 @@ import {
   listUsers,
   updateUserRole,
   updateUserPlan,
-  resetPassword, // <-- thêm import
+  resetPassword,
 } from '../controllers/admin.controller.js';
 
 const router = express.Router();

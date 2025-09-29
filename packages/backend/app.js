@@ -14,7 +14,8 @@ import trainerRouter from './routes/trainer.routes.js';
 
 // từ nhánh main
 import passport from './config/passport.js';
-import googleAuthRoutes from './routes/auth.js'; // Google OAuth routes under /auth
+import googleAuthRoutes from './routes/auth.js';   // Google OAuth routes under /auth
+import onboardingRouter from './routes/onboarding.routes.js';
 
 dotenv.config();
 
@@ -87,7 +88,8 @@ const authLimiter = rateLimit({
 // JWT-based auth APIs
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/admin', adminRouter);
-app.use('/api/trainer', trainerRouter); // NOTE: đảm bảo FE gọi đúng prefix này
+app.use('/api/trainer', trainerRouter);
+app.use('/api/onboarding', onboardingRouter);
 
 // Google OAuth (session-based)
 app.use('/auth', googleAuthRoutes);
