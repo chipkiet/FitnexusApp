@@ -20,7 +20,7 @@ export default function AdminUsers() {
   const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState(null);
 
-  // Sync plan từ URL vào state
+  // Sync "plan" từ URL vào state (chạy khi URL đổi)
   useEffect(() => {
     const p = (searchParams.get("plan") || "ALL").toUpperCase();
     setPlanFilter(PLANS.includes(p) ? p : "ALL");
@@ -51,10 +51,10 @@ export default function AdminUsers() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit, offset, planFilter]);
 
-  const onSearch = (e) => {
+  const onSearch = async (e) => {
     e.preventDefault();
     setOffset(0);
-    load();
+    await load();
   };
 
   const onChangeRole = async (id, role) => {
@@ -81,7 +81,9 @@ export default function AdminUsers() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Logged in as: <span className="font-medium text-indigo-600">{user?.username}</span> ({user?.role})
+                Logged in as:{" "}
+                <span className="font-medium text-indigo-600">{user?.username}</span>{" "}
+                ({user?.role})
               </p>
             </div>
             <div className="text-sm text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm border">
@@ -90,9 +92,9 @@ export default function AdminUsers() {
           </div>
         </div>
 
-        {/* Search Form */}
+        {/* Search + Filters */}
         <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
-          <form className="flex gap-4" onSubmit={onSearch}>
+          <form className="flex flex-col md:flex-row gap-4" onSubmit={onSearch}>
             <div className="flex-1 max-w-lg">
               <div className="relative">
                 <input
@@ -108,12 +110,45 @@ export default function AdminUsers() {
                 </div>
               </div>
             </div>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
-            >
-              Search
-            </button>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Plan:</label>
+              <select
+                className="border border-gray-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={planFilter}
+                onChange={(e) => {
+                  setPlanFilter(e.target.value);
+                  setOffset(0);
+                }}
+              >
+                {PLANS.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+              >
+                Search
+              </button>
+              {search || planFilter !== "ALL" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setPlanFilter("ALL");
+                    setOffset(0);
+                    load();
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                >
+                  Reset
+                </button>
+              ) : null}
+            </div>
           </form>
         </div>
 
@@ -126,7 +161,7 @@ export default function AdminUsers() {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-600">{error.message || 'Error'}</p>
+                <p className="text-sm text-red-600">{error.message || "Error"}</p>
               </div>
             </div>
           </div>
@@ -190,14 +225,16 @@ export default function AdminUsers() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          u.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            u.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
                           {u.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '-'}
+                        {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "-"}
                       </td>
                     </tr>
                   ))
@@ -233,9 +270,16 @@ export default function AdminUsers() {
             <select
               className="border border-gray-300 rounded-md shadow-sm py-1.5 pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               value={limit}
-              onChange={(e) => { setLimit(parseInt(e.target.value, 10)); setOffset(0); }}
+              onChange={(e) => {
+                setLimit(parseInt(e.target.value, 10));
+                setOffset(0);
+              }}
             >
-              {[10,20,50,100].map((n) => <option key={n} value={n}>{n} per page</option>)}
+              {[10, 20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n} per page
+                </option>
+              ))}
             </select>
           </div>
         </div>

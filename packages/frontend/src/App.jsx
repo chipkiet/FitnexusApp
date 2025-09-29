@@ -16,12 +16,13 @@ import AdminOverview from "./pages/admin/Overview.jsx";
 import AdminUserDetail from "./pages/admin/UserDetail.jsx";
 import AdminContentManage from "./pages/admin/ContentManage.jsx";
 import AdminFinancialManage from "./pages/admin/FinancialManage.jsx";
-
-// ✅ Trang mới đã tách riêng
 import Role from "./pages/admin/Role.jsx";
 import Plan from "./pages/admin/Plan.jsx";
 import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
+
+// (Optional) trang quản lý users nếu bạn có file này
+import AdminUsers from "./pages/AdminUsers.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -42,7 +43,7 @@ function AdminRoute({ children }) {
 
 function App() {
   useEffect(() => {
-    // Debug listener để xem FE có nhận được message từ popup Google không
+    // Debug listener để xem FE có nhận message từ popup OAuth hay không
     const handler = (e) => {
       console.log("oauth msg:", e.origin, e.data);
     };
@@ -82,13 +83,14 @@ function App() {
           >
             <Route index element={<AdminOverview />} />
             <Route path="user-detail" element={<AdminUserDetail />} />
-            {/* ⛔ BỎ: <Route path="role-plan" element={<AdminRolePlan />} /> */}
             <Route path="role" element={<Role />} />
             <Route path="plan" element={<Plan />} />
             <Route path="lock-unlock" element={<AdminLockUnlock />} />
             <Route path="reset-password" element={<AdminResetPassword />} />
             <Route path="content" element={<AdminContentManage />} />
             <Route path="finance" element={<AdminFinancialManage />} />
+            {/* Thêm route này nếu bạn dùng trang AdminUsers */}
+            <Route path="users" element={<AdminUsers />} />
           </Route>
 
           {/* Catch all */}
