@@ -4,7 +4,7 @@ import OnboardingAnswer from "../models/onboarding.answer.model.js";
 import OnboardingSession from "../models/onboarding.session.model.js";
 import User from "../models/user.model.js";
 import { sequelize } from "../config/database.js";
-import { Op } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 // Helper: fetch step by key with fields
 async function getStepByKeyWithFields(stepKey) {
@@ -13,21 +13,26 @@ async function getStepByKeyWithFields(stepKey) {
     order: [["order_index", "ASC"]],
   });
   if (!step) return null;
+
   const fields = await OnboardingField.findAll({
     where: { step_id: step.step_id },
     order: [["order_index", "ASC"], ["field_id", "ASC"]],
   });
+
   return { step, fields };
 }
 
 // Helper: find/create active session for user
-async function findOrCreateActiveSession(userId) {
+async function findOrCreateActiveSession(userId, currentStepKey = null) {
   let session = await OnboardingSession.findOne({
     where: { user_id: userId, is_completed: false },
     order: [["created_at", "DESC"]],
   });
   if (!session) {
-    session = await OnboardingSession.create({ user_id: userId });
+    session = await OnboardingSession.create({
+      user_id: userId,
+      current_step_key: currentStepKey || null,
+    });
   }
   return session;
 }
@@ -37,7 +42,9 @@ export async function getStep(req, res) {
   try {
     const { key } = req.params;
     const data = await getStepByKeyWithFields(key);
-    if (!data) return res.status(404).json({ success: false, message: "Step not found" });
+    if (!data) {
+      return res.status(404).json({ success: false, message: "Step not found" });
+    }
 
     const { step, fields } = data;
     return res.json({
@@ -62,7 +69,6 @@ export async function getStep(req, res) {
       },
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error("getStep error:", err);
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -90,7 +96,7 @@ export async function saveAnswer(req, res) {
     }
     const { step, fields } = data;
 
-    // Validate for specific step: age
+    // Validate riêng cho step 'age'
     if (step.step_key === "age") {
       const ageField = fields.find((f) => f.field_key === "age_group");
       const opt = (ageField?.metadata?.options || []).map((o) => String(o.key));
@@ -101,13 +107,14 @@ export async function saveAnswer(req, res) {
       }
     }
 
-    // Session
-    const session = await findOrCreateActiveSession(userId);
-    // Upsert answer per (session, step)
+    // session hiện hành
+    const session = await findOrCreateActiveSession(userId, step.step_key);
+
+    // upsert answer per (session, step)
     const existing = await OnboardingAnswer.findOne({
       where: { session_id: session.session_id, step_id: step.step_id },
       transaction: t,
-      lock: t.LOCK.UPDATE,
+      lock: Transaction.LOCK.UPDATE,
     });
 
     if (existing) {
@@ -119,22 +126,42 @@ export async function saveAnswer(req, res) {
       );
     }
 
-    // Determine next step by order_index
-    const next = await OnboardingStep.findOne({
+    // bước kế tiếp theo order_index
+    let next = await OnboardingStep.findOne({
       where: { is_active: true, order_index: { [Op.gt]: step.order_index } },
       order: [["order_index", "ASC"]],
       transaction: t,
     });
 
+    // ✅ Cho phép kết thúc ngay sau bước 'age'.
+    // Mặc định BẬT (trừ khi đặt ONBOARDING_END_AFTER_AGE="false")
+    const endAfterAge = process.env.ONBOARDING_END_AFTER_AGE !== "false";
+    if (endAfterAge && step.step_key === "age") {
+      next = null;
+    }
+
     if (next) {
       await session.update({ current_step_key: next.step_key }, { transaction: t });
-    } else {
-      // Finish session and mark user onboarded
-      await session.update({ is_completed: true, completed_at: new Date() }, { transaction: t });
-      const user = await User.findByPk(userId, { transaction: t });
-      if (user) {
-        await user.update({ onboardingCompletedAt: new Date() }, { transaction: t });
-      }
+      await t.commit();
+      return res.json({
+        success: true,
+        message: "Saved",
+        data: {
+          session_id: session.session_id,
+          nextStepKey: next.step_key,
+          completed: false,
+          complete: false,
+        },
+      });
+    }
+
+    // Không còn bước -> hoàn tất
+    await session.update({ is_completed: true, completed_at: new Date() }, { transaction: t });
+
+    const user = await User.findByPk(userId, { transaction: t });
+    if (user) {
+      // dùng đúng cột snake_case trong DB
+      await user.update({ onboarding_completed_at: new Date() }, { transaction: t });
     }
 
     await t.commit();
@@ -143,13 +170,13 @@ export async function saveAnswer(req, res) {
       message: "Saved",
       data: {
         session_id: session.session_id,
-        nextStepKey: next ? next.step_key : null,
-        completed: !next,
+        nextStepKey: null,
+        completed: true,
+        complete: true,
       },
     });
   } catch (err) {
     await t.rollback();
-    // eslint-disable-next-line no-console
     console.error("saveAnswer error:", err);
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
@@ -162,17 +189,19 @@ export async function getSessionStatus(req, res) {
     const userId = req.userId;
     const user = await User.findByPk(userId);
 
-    // If user has completed flag -> not required
-    if (user?.onboardingCompletedAt) {
+    const onboarded = !!(user?.onboarding_completed_at || user?.onboardingCompletedAt);
+
+    if (onboarded) {
       return res.json({
         success: true,
         data: {
           required: false,
           completed: true,
+          complete: true,
           sessionId: null,
           currentStepKey: null,
           nextStepKey: null,
-          completedAt: user.onboardingCompletedAt,
+          completedAt: user.onboarding_completed_at || user.onboardingCompletedAt,
         },
       });
     }
@@ -201,6 +230,7 @@ export async function getSessionStatus(req, res) {
           data: {
             required: false,
             completed: true,
+            complete: true,
             sessionId: completedSession.session_id,
             currentStepKey: null,
             nextStepKey: null,
@@ -222,13 +252,13 @@ export async function getSessionStatus(req, res) {
       data: {
         required: true,
         completed: false,
+        complete: false,
         sessionId: session.session_id,
         currentStepKey: session.current_step_key,
         nextStepKey: nextKey,
       },
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error("getSessionStatus error:", err);
     return res.status(500).json({ success: false, message: "Internal server error" });
   }

@@ -15,6 +15,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Dùng để đánh dấu user đã hoàn thành onboarding
+const markOnboarded = () => {
+    setUser((u) => (u ? { ...u, onboardingCompletedAt: new Date().toISOString() } : u));
+  };
+
   // OAuth (Google) – lấy user từ session cookie
   const oauthLogin = async (remember = true) => {
     try {
@@ -34,12 +39,26 @@ export function AuthProvider({ children }) {
   // (tuỳ chọn) tiện gọi lại khi cần
   const refreshUser = async () => {
     try {
-      const r = await api.get(endpoints.oauth.me);
-      if (r?.data?.user) { setUser(r.data.user); return true; }
-      const r2 = await api.get(endpoints.auth.me);
-      if (r2?.data?.success && r2?.data?.data) { setUser(r2.data.data); return true; }
+      const r = await api.get(endpoints.oauth.me, {
+        params: { t: Date.now() },
+        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+        withCredentials: true,
+      });
+      const u1 = r?.data?.user || r?.data?.data;
+      if (u1) { setUser(u1); return true; }
+
+      const r2 = await api.get(endpoints.auth.me, {
+        params: { t: Date.now() },
+        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+        withCredentials: true,
+      });
+      const u2 = r2?.data?.data;
+      if (r2?.data?.success && u2) { setUser(u2); return true; }
+
       return false;
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   };
 
   // Bootstrap: ưu tiên session (Google), sau đó JWT
@@ -47,13 +66,23 @@ export function AuthProvider({ children }) {
     const initializeAuth = async () => {
       try {
         try {
-          const r = await api.get(endpoints.oauth.me); // /auth/me
-          if (r?.data?.user) { setUser(r.data.user); return; }
+          const r = await api.get(endpoints.oauth.me, {
+            params: { t: Date.now() },
+            headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+            withCredentials: true,
+          });
+          const u = r?.data?.user || r?.data?.data;
+          if (u) { setUser(u); return; }
         } catch {}
+
         const token = getToken();
         if (token) {
           try {
-            const r2 = await api.get(endpoints.auth.me); // /api/auth/me
+            const r2 = await api.get(endpoints.auth.me, {
+              params: { t: Date.now() },
+              headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+              withCredentials: true,
+            });
             if (r2?.data?.success && r2?.data?.data) { setUser(r2.data.data); return; }
             else { clearAllTokens(); }
           } catch { clearAllTokens(); }
@@ -151,6 +180,7 @@ export function AuthProvider({ children }) {
       logout,
       oauthLogin,
       refreshUser, // (tuỳ chọn) export ra nếu cần
+      markOnboarded,
       isAuthenticated,
       getAuthStatus,
       clearError: () => setError(null),

@@ -73,24 +73,35 @@ const goSignup = () => {
   };
 
   // ====== Submit bằng email/username + password ======
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const result = await login({
-        identifier: form.identifier,
-        password: form.password,
-        rememberMe: form.remember,
-      });
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const result = await login({
+      identifier: form.identifier,
+      password: form.password,
+      rememberMe: form.remember,
+    });
+
+    // ✅ kiểm tra session onboarding để điều hướng đúng
+    const { data: sessResp } = await api.get(endpoints.onboarding.session, {
+      params: { t: Date.now() },
+      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+    });
+
+    const s = sessResp?.data || {};
+    const needOnboarding = s.required && !(s.completed || s.complete);
+
+    if (needOnboarding) {
+      navigate("/onboarding", { replace: true });
+    } else {
       const role = result?.data?.user?.role;
-      if (role === 'ADMIN') {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
-    } catch (_) {
-      // error đã được context xử lý
+      if (role === "ADMIN") navigate("/admin", { replace: true });
+      else navigate("/dashboard", { replace: true });
     }
-  };
+  } catch {
+    // error đã được context xử lý
+  }
+};
 
 // ====== Đăng nhập bằng Google (popup, không reload) ======
 // Poll session cho tới khi /api/auth/me trả 200
@@ -120,6 +131,8 @@ const handleGoogleLogin = () => {
     setOauthLoading(true);
     const be = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
     // chuyển tab hiện tại sang BE để bắt đầu OAuth
+    const from = location.state?.from?.pathname;   // ⬅️ lấy from nếu có
+  const url = `${be}/auth/google${from ? `?from=${encodeURIComponent(from)}` : ""}`;
     window.location.href = `${be}/auth/google`;
   };
 
