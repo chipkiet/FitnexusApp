@@ -19,59 +19,19 @@ Table Users {
   onboarding_completed_at TIMESTAMP                // đánh dấu đã hoàn tất onboarding
 }
 
-// ==== Bảng Thư viện & Giải phẫu ====
-Table Exercises {
-  exercise_id INT [pk, increment]
-  name VARCHAR(255) [not null]
-  description TEXT
-  difficulty_level VARCHAR(50)
-  exercise_type VARCHAR(50) 
-  equipment_needed VARCHAR(255)
-  primary_video_url VARCHAR(255)
-  is_public BOOLEAN [default: TRUE]
-  created_at TIMESTAMP [default: `now()`]
-  updated_at TIMESTAMP
-}
-
-Table ExerciseSteps {
-  step_id INT [pk, increment]
-  exercise_id INT [ref: > Exercises.exercise_id, not null] // Mối quan hệ 3
-  step_number INT [not null]
-  instruction_text TEXT [not null]
-  media_url VARCHAR(255)
-}
-
-Table MuscleGroups {
-  muscle_group_id INT [pk, increment]
-  name VARCHAR(100) [not null]
-  description TEXT
-  image_url VARCHAR(255)
-  model_identifier VARCHAR(100) [unique]
-  parent_id INT [ref: > MuscleGroups.muscle_group_id] // Mối quan hệ 4
-  created_at TIMESTAMP [default: `now()`]
-}
-
-// Bảng trung gian - Cầu nối quan trọng nhất
-Table Exercise_MuscleGroup {
-  exercise_id INT [ref: > Exercises.exercise_id] // Mối quan hệ 5
-  muscle_group_id INT [ref: > MuscleGroups.muscle_group_id] // Mối quan hệ 5
-  impact_level VARCHAR(20) [not null, default: 'primary']
-  Primary Key (exercise_id, muscle_group_id)
-}
-
 
 // ==== Bảng theo dõi người dùng ====
 Table UserProgress {
   progress_id INT [pk, increment]
   user_id INT [ref: > Users.user_id, not null] // Mối quan hệ 1
   date_recorded DATE [not null]
-  weight DECIMAL(5, 2)
-  height DECIMAL(5, 1)
-  chest DECIMAL(5, 1) [null]
-  waist DECIMAL(5, 1) [null]
-  biceps DECIMAL(5, 1) [null]
-  thigh DECIMAL(5, 1) [null]
-  body_fat_level DECIMAL(4, 2) [null]
+  weight_kg DECIMAL(5, 2)
+  height_cm DECIMAL(5, 1)
+  chest_cm DECIMAL(5, 1) [null]
+  waist_cm DECIMAL(5, 1) [null]
+  biceps_cm DECIMAL(5, 1) [null]
+  thigh_cm DECIMAL(5, 1) [null]
+  body_fat_percentage DECIMAL(4, 2) [null]
   notes TEXT
   created_at TIMESTAMP [default: `now()`]
 }
@@ -186,4 +146,150 @@ Table OnboardingAnswers {
   // Lưu THEO BƯỚC: duy nhất một bản ghi cho mỗi (session, step)
   Note: 'UNIQUE(session_id, step_id); INDEX(session_id); INDEX(step_id)'
 }
+
+
+// ==== Bảng Thư viện & Giải phẫu ====
+Table Exercises {
+  exercise_id INT [pk, increment]
+  name VARCHAR(255) [not null]
+  name_en VARCHAR(255) 
+  slug VARCHAR(255) [unique, not null]
+  description TEXT
+
+
+  difficulty_level VARCHAR(50) // beginner, intermediate, advanced
+  exercise_type VARCHAR(50) // compound, isolation, cardio, flexibility
+  equipment_needed VARCHAR(255)  // barbell, dumbbell, bodyweight, machine
+
+  // Media
+  primary_video_url VARCHAR(255)
+  thumbnail_url VARCHAR(255)
+  gif_demo_url VARCHAR(255)
+
+  // Metadata
+  duration_minutes INT                      // Thời gian trung bình
+  calories_per_rep DECIMAL(4,2)            // Ước tính calo
+  popularity_score INT [default: 0]         // Để ranking
+
+  is_public BOOLEAN [default: TRUE]
+  is_featured BOOLEAN [default: FALSE]      // Bài tập nổi bật
+
+  created_at TIMESTAMP [default: `now()`]
+  updated_at TIMESTAMP
+  
+  Note: 'INDEX(difficulty_level); INDEX(exercise_type); INDEX(popularity_score); INDEX(slug)'
+
+}
+
+Table MuscleGroups {
+  muscle_group_id INT [pk, increment]
+  name VARCHAR(100) [not null]
+  name_en VARCHAR(100) [not null]
+  slug VARCHAR(100) [unique, not null]
+  description TEXT
+
+  // Metadata cho 3D Model
+  model_identifier VARCHAR(100) [unique] // ID mesh 3D: "shoulder_anterior"
+  mesh_ids JSONB
+  highlight_color VARCHAR(7)
+  model_position JSONB // toạ độ trung tâm 
+
+  //Hierarchy
+  parent_id INT [ref: > MuscleGroups.muscle_group_id]
+  level INT [not null, default: 0]
+  display_priority INT [default: 0] //Thứ tự hiển thị theo mức  
+
+  //UI Control
+  is_selectable BOOLEAN [default: true] // cho phep nguoi dung click chon
+
+  created_at TIMESTAMP [default: `now()`]
+  updated_at TIMESTAMP
+
+  Note: 'INDEX(parent_id); INDEX(level); INDEX(slug)'
+
+
+}
+
+// Bảng trung gian - Cầu nối quan trọng nhất
+Table Exercise_MuscleGroup {
+  id INT [pk, increment]
+  exercise_id INT [ref: > Exercises.exercise_id] // Mối quan hệ 5
+  muscle_group_id INT [ref: > MuscleGroups.muscle_group_id] // Mối quan hệ 5
+
+  // Mức độ tác dụng
+  impact_level VARCHAR(20) [not null, default: 'primary'] // primary, secondary, stabilizer
+  intensity_percentage INT // vai chiếm bao nhiêu ? ( 60 %), lưng chiếm 50%
+
+  // Metadata
+  activation_note text // Kích hoạt mạnh ở từng điểm cơ
+
+  created_at TIMESTAMP [default: `now()`]
+  
+  Note: 'UNIQUE(exercise_id, muscle_group_id); INDEX(exercise_id); INDEX(muscle_group_id); INDEX(impact_level)'
+}
+
+Table ExerciseMuscleCombinations {
+  combination_id INT [pk, increment]
+  exercise_id INT [ref: > Exercises.exercise_id]
+
+  // Lưu trữ tổ hợp để nhanh chóng lấy bài tập
+  muscle_group_ids_array INT[] [not null]  // PostgreSQL array: {1,5,7}
+  muscle_group_ids_sorted VARCHAR(255) [not null]   // "1,5,7" (sorted) cho exact match
+  muscle_group_slugs_sorted VARCHAR(500)            // "vai,lung,nguc" cho SEO/URL
+
+  // Phân tích tổ hợp
+  primary_muscle_count INT [not null, default: 0]  // Số cơ chính
+  secondary_muscle_count INT [not null, default: 0] // Số cơ phụ
+  total_muscle_count INT [not null]                 // Tổng số cơ
+
+  // Metadata
+  combination_type VARCHAR(50)                      // single, dual, triple, complex
+  complexity_score INT                              // 1-10, để ranking độ phức tạp
+  
+  created_at TIMESTAMP [default: `now()`]
+  updated_at timestamp
+
+  Note: 'UNIQUE(exercise_id); INDEX(muscle_group_ids_sorted); INDEX USING GIN(muscle_group_ids_array); INDEX(primary_muscle_count); INDEX(total_muscle_count)'
+
+}
+
+
+
+Table ExerciseSteps {
+  step_id INT [pk, increment]
+  exercise_id INT [ref: > Exercises.exercise_id, not null] // Mối quan hệ 3
+  step_number INT [not null]
+
+  title VARCHAR(150)            // "Vị trí khởi đầu"
+  instruction_text TEXT [not null]
+
+  media_url VARCHAR(255)
+  media_type VARCHAR(20)                    // image, video, gif
+
+  // Highlight nhóm cơ trong bước này
+  focused_muscle_ids INT[]                  // [1,2] - nhóm cơ tập trung ở bước này
+  duration_seconds INT                      // Thời gian thực hiện bước
+  
+  Note: 'INDEX(exercise_id, step_number)'
+}
+
+// ==== BẢNG LƯU Ý/TIPS ====
+Table ExerciseTips {
+  tip_id INT [pk, increment]
+  exercise_id INT [ref: > Exercises.exercise_id, not null]
+  
+  tip_type VARCHAR(30)                      // common_mistake, pro_tip, safety, breathing
+  title VARCHAR(150)
+  content TEXT [not null]
+  
+  display_order INT [default: 0]
+  
+  created_at TIMESTAMP [default: `now()`]
+  
+  Note: 'INDEX(exercise_id, tip_type)'
+}
+
+
+
+
 
