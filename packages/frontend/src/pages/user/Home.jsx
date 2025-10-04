@@ -1,11 +1,11 @@
 import React, { useState, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Bounds } from "@react-three/drei";
-import { HumanModel } from "../components/3d/HumanModel";
-import ExerciseList from "../components/exercise/ExerciseList";
+import { HumanModel } from "../../components/3d/HumanModel";
+import ExerciseList from "../../components/exercise/ExerciseList";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/auth.context";
-import api from "../lib/api";
+import { useAuth } from "../../context/auth.context";
+import api from "../../lib/api";
 
 export default function Home() {
   const [exercises, setExercises] = useState([]);

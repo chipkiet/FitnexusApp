@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import loginImg from "../assets/login.png"; 
+import loginImg from "../../assets/login.png"; 
 
 export default function VerifyCode() {
   const [code, setCode] = useState("");

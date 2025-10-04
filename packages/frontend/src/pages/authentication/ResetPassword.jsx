@@ -1,11 +1,11 @@
 // src/pages/ResetPassword.jsx
 import React, { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import PasswordInput from "../components/form/PasswordInput.jsx";
-import Alert from "../components/common/Alert.jsx";
-import { validatePassword } from "../lib/passwordValidation.js";
-import api from "../lib/api.js";
-import lockImg from "../assets/forgot.png";
+import PasswordInput from "../../components/form/PasswordInput.jsx";
+import Alert from "../../components/common/Alert.jsx";
+import { validatePassword } from "../../lib/passwordValidation.js";
+import api from "../../lib/api.js";
+import lockImg from "../../assets/forgot.png";
 
 export default function ResetPassword() {
   const navigate = useNavigate();

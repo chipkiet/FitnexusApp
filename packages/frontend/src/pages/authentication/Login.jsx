@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/auth.context.jsx";
-import loginImg from "../assets/login.png";
+import { useAuth } from "../../context/auth.context.jsx";
+import loginImg from "../../assets/login.png";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
-import Alert from "../components/common/Alert.jsx";
-import api, { endpoints } from "../lib/api.js";
-import { setTokens } from "../lib/tokenManager.js"; // ✅ thêm
+import Alert from "../../components/common/Alert.jsx";
+import api, { endpoints } from "../../lib/api.js";
+import { setTokens } from "../../lib/tokenManager.js"; // ✅ thêm
 
 function OAuthNotFoundModal({ email, onClose, onSignup }) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-xl p-6 w-[420px] text-center">
-        <h2 className="text-lg font-semibold mb-2">Không tìm thấy tài khoản</h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <h2 className="mb-2 text-lg font-semibold">Không tìm thấy tài khoản</h2>
+        <p className="mb-4 text-sm text-gray-600">
           Tài khoản Google {email ? <b>{email}</b> : "vừa dùng"} chưa liên kết với FITNEXUS.
         </p>
         <div className="flex gap-3">
-          <button className="flex-1 py-2 rounded-lg border hover:bg-gray-50" onClick={onClose}>
+          <button className="flex-1 py-2 border rounded-lg hover:bg-gray-50" onClick={onClose}>
             Đăng nhập bằng cách khác
           </button>
           <button
-            className="flex-1 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
+            className="flex-1 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700"
             onClick={onSignup}
           >
             Đăng ký
@@ -76,7 +76,7 @@ export default function Login() {
         rememberMe: form.remember,
       });
 
-      // ✅ Lưu token vào tokenManager
+      // Lưu token vào tokenManager
       const accessToken =
         result?.data?.accessToken ||
         result?.data?.token ||

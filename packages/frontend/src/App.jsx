@@ -2,13 +2,14 @@ import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/auth.context.jsx";
 
-import Register from "./pages/Register.jsx";
-import Login from "./pages/Login.jsx";
-import Home from "./pages/Home.jsx";
-import ForgotPassword from "./pages/ForgotPassword.jsx";
-import VerifyCode from "./pages/VerifyCode.jsx";
-import ResetPassword from "./pages/ResetPassword.jsx";
-import Onboarding from "./pages/Onboarding.jsx";
+import Register from "./pages/authentication/Register.jsx";
+import Login from "./pages/authentication/Login.jsx";
+import Home from "./pages/user/Home.jsx";
+import ForgotPassword from "./pages/authentication/ForgotPassword.jsx";
+import VerifyCode from "./pages/authentication/VerifyCode.jsx";
+import ResetPassword from "./pages/authentication/ResetPassword.jsx";
+import Onboarding from "./pages/onboarding/Onboarding.jsx";
+import Dashboard from "./pages/dashboard/Dashboard.jsx";
 
 // Admin layout & pages
 import AdminLayout from "./layouts/AdminLayout.jsx";
@@ -22,7 +23,7 @@ import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
 
 // (Optional) trang quản lý users nếu bạn có file này
-import AdminUsers from "./pages/AdminUsers.jsx";
+import AdminUsers from "./pages/admin/AdminUsers.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -63,14 +64,9 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Main app routes */}
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <Home />
-              </PrivateRoute>
-            }
-          />
+          {/* Public landing page at root shows Dashboard */}
+          <Route path="/" element={<Dashboard />} />
+
 
           {/* Admin pages */}
           <Route

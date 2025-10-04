@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useAuth } from "../context/auth.context.jsx";
-import { getAdminUsers, patchUserRole } from "../lib/api.js";
+import { useAuth } from "../../context/auth.context.jsx";
+import { getAdminUsers, patchUserRole } from "../../lib/api.js";
 
 const PLANS = ["ALL", "FREE", "PREMIUM"];
 const ROLES = ["USER", "TRAINER", "ADMIN"];
