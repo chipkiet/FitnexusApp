@@ -4,12 +4,10 @@ import { AuthProvider, useAuth } from "./context/auth.context.jsx";
 
 import Register from "./pages/authentication/Register.jsx";
 import Login from "./pages/authentication/Login.jsx";
-import Home from "./pages/user/Home.jsx";
 import ForgotPassword from "./pages/authentication/ForgotPassword.jsx";
 import VerifyCode from "./pages/authentication/VerifyCode.jsx";
 import ResetPassword from "./pages/authentication/ResetPassword.jsx";
-import Onboarding from "./pages/onboarding/Onboarding.jsx";
-import Dashboard from "./pages/dashboard/Dashboard.jsx";
+import Landing from "./pages/landing/Landing.jsx";
 
 // Admin layout & pages
 import AdminLayout from "./layouts/AdminLayout.jsx";
@@ -65,7 +63,7 @@ function App() {
 
           {/* Main app routes */}
           {/* Public landing page at root shows Dashboard */}
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Landing />} />
 
 
           {/* Admin pages */}
