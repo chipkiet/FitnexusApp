@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "description": "Monorepo for the Fitnexus application",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "install:all": "npm install",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "xwalk:normalize": "node scripts/normalize_exercise_muscles.js",
+    "xwalk:prepare": "node scripts/normalize_exercise_muscles.js",
+    "xwalk:import": "node scripts/import_exercises.js"
+
   },
   "workspaces": [
     "packages/*"
