@@ -1,0 +1,142 @@
+[
+  {
+    "equipment_key": "stepmill-machine",
+    "name_en": "stepmill machine",
+    "name": "máy leo cầu thang"
+  },
+  {
+    "equipment_key": "elliptical-machine",
+    "name_en": "elliptical machine",
+    "name": "máy elip"
+  },
+  {
+    "equipment_key": "trap-bar",
+    "name_en": "trap bar",
+    "name": "đòn bẩy trap bar"
+  },
+  {
+    "equipment_key": "tire",
+    "name_en": "tire",
+    "name": "lốp xe"
+  },
+  {
+    "equipment_key": "stationary-bike",
+    "name_en": "stationary bike",
+    "name": "xe đạp tập"
+  },
+  {
+    "equipment_key": "wheel-roller",
+    "name_en": "wheel roller",
+    "name": "bánh xe tập bụng"
+  },
+  {
+    "equipment_key": "smith-machine",
+    "name_en": "smith machine",
+    "name": "máy Smith"
+  },
+  {
+    "equipment_key": "hammer",
+    "name_en": "hammer",
+    "name": "búa tay (sledge)"
+  },
+  {
+    "equipment_key": "skierg-machine",
+    "name_en": "skierg machine",
+    "name": "máy SkiErg"
+  },
+  {
+    "equipment_key": "roller",
+    "name_en": "roller",
+    "name": "con lăn"
+  },
+  {
+    "equipment_key": "resistance-band",
+    "name_en": "resistance band",
+    "name": "dây kháng lực"
+  },
+  {
+    "equipment_key": "bosu-ball",
+    "name_en": "bosu ball",
+    "name": "bóng BOSU"
+  },
+  {
+    "equipment_key": "weighted",
+    "name_en": "weighted",
+    "name": "tạ đeo/thêm tạ"
+  },
+  {
+    "equipment_key": "olympic-barbell",
+    "name_en": "olympic barbell",
+    "name": "tạ đòn Olympic"
+  },
+  {
+    "equipment_key": "kettlebell",
+    "name_en": "kettlebell",
+    "name": "chuông tạ"
+  },
+  {
+    "equipment_key": "upper-body-ergometer",
+    "name_en": "upper body ergometer",
+    "name": "máy tay quay UBE"
+  },
+  {
+    "equipment_key": "sled-machine",
+    "name_en": "sled machine",
+    "name": "máy kéo xe trượt"
+  },
+  {
+    "equipment_key": "ez-barbell",
+    "name_en": "ez barbell",
+    "name": "tạ đòn EZ"
+  },
+  {
+    "equipment_key": "dumbbell",
+    "name_en": "dumbbell",
+    "name": "tạ tay"
+  },
+  {
+    "equipment_key": "rope",
+    "name_en": "rope",
+    "name": "dây thừng"
+  },
+  {
+    "equipment_key": "barbell",
+    "name_en": "barbell",
+    "name": "tạ đòn"
+  },
+  {
+    "equipment_key": "band",
+    "name_en": "band",
+    "name": "dây kháng lực"
+  },
+  {
+    "equipment_key": "stability-ball",
+    "name_en": "stability ball",
+    "name": "bóng tập (Swiss ball)"
+  },
+  {
+    "equipment_key": "medicine-ball",
+    "name_en": "medicine ball",
+    "name": "bóng y học"
+  },
+  {
+    "equipment_key": "assisted",
+    "name_en": "assisted",
+    "name": "máy hỗ trợ"
+  },
+  {
+    "equipment_key": "leverage-machine",
+    "name_en": "leverage machine",
+    "name": "máy đòn bẩy"
+  },
+  {
+    "equipment_key": "cable",
+    "name_en": "cable",
+    "name": "máy dây cáp"
+  },
+  {
+    "equipment_key": "body-weight",
+    "name_en": "body weight",
+    "name": "trọng lượng cơ thể"
+  }
+]
