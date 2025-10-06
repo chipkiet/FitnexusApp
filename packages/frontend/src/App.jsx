@@ -8,6 +8,7 @@ import ForgotPassword from "./pages/authentication/ForgotPassword.jsx";
 import VerifyCode from "./pages/authentication/VerifyCode.jsx";
 import ResetPassword from "./pages/authentication/ResetPassword.jsx";
 import Landing from "./pages/landing/Landing.jsx";
+import Dashboard from "./pages/user/Dashboard.jsx";
 
 // Admin layout & pages
 import AdminLayout from "./layouts/AdminLayout.jsx";
@@ -64,6 +65,16 @@ function App() {
           {/* Main app routes */}
           {/* Public landing page at root shows Dashboard */}
           <Route path="/" element={<Landing />} />
+
+          {/* Authenticated dashboard */}
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
 
 
           {/* Admin pages */}
