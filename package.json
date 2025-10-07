@@ -12,7 +12,6 @@
     "xwalk:normalize": "node scripts/normalize_exercise_muscles.js",
     "xwalk:prepare": "node scripts/normalize_exercise_muscles.js",
     "xwalk:import": "node scripts/import_exercises.js"
-
   },
   "workspaces": [
     "packages/*"
@@ -21,7 +20,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "gh-pages": "^6.3.0"
   },
   "dependencies": {
     "ioredis": "^5.8.0",

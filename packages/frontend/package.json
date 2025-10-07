@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://chipkiet.github.io/FitnexusApp",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -18,7 +19,10 @@
     "react-dom": "^19.1.1",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.1",
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
