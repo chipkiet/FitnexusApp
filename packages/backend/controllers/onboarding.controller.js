@@ -6,6 +6,26 @@ import User from "../models/user.model.js";
 import { sequelize } from "../config/database.js";
 import { Op, Transaction } from "sequelize";
 
+import { validateAnswers, pickAllowedAnswers } from "../utils/onboarding.validation.js";
+
+/* =========================
+   Helpers chung (THÊM MỚI)
+   ========================= */
+
+function isNonEmpty(v) {
+  if (v === null || v === undefined) return false;
+  if (typeof v === "string") return v.trim() !== "";
+  if (Array.isArray(v)) return v.length > 0;
+  if (typeof v === "object") return Object.keys(v).length > 0;
+  return true;
+}
+
+function isStepCompleteByBlob(fields, blob) {
+  const reqKeys = (fields || []).filter(f => !!f.required).map(f => f.field_key);
+  if (reqKeys.length === 0) return true;
+  return reqKeys.every(k => isNonEmpty(blob?.[k]));
+}
+
 // Helper: fetch step by key with fields
 async function getStepByKeyWithFields(stepKey) {
   const step = await OnboardingStep.findOne({
@@ -37,7 +57,9 @@ async function findOrCreateActiveSession(userId, currentStepKey = null) {
   return session;
 }
 
-// GET /api/onboarding/steps/:key
+/* =========================
+   GET /api/onboarding/steps/:key
+   ========================= */
 export async function getStep(req, res) {
   try {
     const { key } = req.params;
@@ -74,8 +96,11 @@ export async function getStep(req, res) {
   }
 }
 
-// POST /api/onboarding/steps/:key/answer
-// Body: { answers: {...} }
+/* =========================
+   POST /api/onboarding/steps/:key/answer
+   Body: { answers: {...} }
+   LƯU + TÍNH LẠI firstIncomplete (ĐÃ SỬA)
+   ========================= */
 export async function saveAnswer(req, res) {
   const t = await sequelize.transaction();
   try {
@@ -96,15 +121,33 @@ export async function saveAnswer(req, res) {
     }
     const { step, fields } = data;
 
-    // Validate riêng cho step 'age'
-    if (step.step_key === "age") {
-      const ageField = fields.find((f) => f.field_key === "age_group");
-      const opt = (ageField?.metadata?.options || []).map((o) => String(o.key));
-      const chosen = String(answers?.age_group || "");
-      if (!chosen || !opt.includes(chosen)) {
-        await t.rollback();
-        return res.status(422).json({ success: false, message: "Invalid age_group option" });
+    // Bạn đang có rule riêng cho workout_frequency -> giữ nguyên
+    if (step.step_key === "workout_frequency") {
+      // 1) Chuẩn hoá kiểu về string để khớp metadata.options
+      if (answers?.workout_days_per_week !== undefined) {
+        answers.workout_days_per_week = String(answers.workout_days_per_week);
       }
+      // 2) Validate thuộc tập options
+      const field = fields.find((f) => f.field_key === "workout_days_per_week");
+      const allowed = (field?.metadata?.options || []).map((o) => String(o.key));
+      const chosen = String(answers?.workout_days_per_week ?? "");
+      if (!chosen || !allowed.includes(chosen)) {
+        await t.rollback();
+        return res.status(422).json({
+          success: false,
+          message: "Invalid workout_days_per_week option",
+        });
+      }
+    }
+
+    // Chỉ pick các key hợp lệ theo field list
+    const safeAnswers = pickAllowedAnswers(fields, answers);
+
+    // Validate theo input_type/metadata bạn đã cài
+    const error = validateAnswers(fields, safeAnswers);
+    if (error) {
+      await t.rollback();
+      return res.status(422).json({ success: false, message: error });
     }
 
     // session hiện hành
@@ -117,51 +160,62 @@ export async function saveAnswer(req, res) {
       lock: Transaction.LOCK.UPDATE,
     });
 
+    const toSave = safeAnswers;
     if (existing) {
-      await existing.update({ answers }, { transaction: t });
+      await existing.update({ answers: toSave }, { transaction: t });
     } else {
       await OnboardingAnswer.create(
-        { session_id: session.session_id, step_id: step.step_id, answers },
+        { session_id: session.session_id, step_id: step.step_id, answers: toSave },
         { transaction: t }
       );
     }
 
-    // bước kế tiếp theo order_index
-    let next = await OnboardingStep.findOne({
-      where: { is_active: true, order_index: { [Op.gt]: step.order_index } },
+    /* =========================
+       TÍNH LẠI firstIncomplete CHO TOÀN BỘ FLOW (SỬA)
+       ========================= */
+    const allSteps = await OnboardingStep.findAll({
+      where: { is_active: true },
       order: [["order_index", "ASC"]],
       transaction: t,
     });
+    const stepIds = allSteps.map(s => s.step_id);
 
-    // ✅ Cho phép kết thúc ngay sau bước 'age'.
-    // Mặc định BẬT (trừ khi đặt ONBOARDING_END_AFTER_AGE="false")
-    const endAfterAge = process.env.ONBOARDING_END_AFTER_AGE !== "false";
-    if (endAfterAge && step.step_key === "age") {
-      next = null;
+    const allFields = await OnboardingField.findAll({
+      where: { step_id: stepIds },
+      order: [["order_index", "ASC"], ["field_id", "ASC"]],
+      transaction: t,
+    });
+    const fieldsByStepId = new Map(stepIds.map(id => [id, []]));
+    for (const f of allFields) fieldsByStepId.get(f.step_id).push(f);
+
+    const allAnswers = await OnboardingAnswer.findAll({
+      where: { session_id: session.session_id },
+      transaction: t,
+      lock: Transaction.LOCK.UPDATE,
+    });
+    const blobByStepId = new Map(allAnswers.map(a => [a.step_id, a.answers || {}]));
+
+    // Tìm step đầu tiên còn thiếu required
+    let firstIncomplete = null;
+    for (const s of allSteps) {
+      const sFields = fieldsByStepId.get(s.step_id) || [];
+      const blob = blobByStepId.get(s.step_id) || {};
+      const ok = isStepCompleteByBlob(sFields, blob);
+      if (!ok) { firstIncomplete = s; break; }
     }
 
-    if (next) {
-      await session.update({ current_step_key: next.step_key }, { transaction: t });
-      await t.commit();
-      return res.json({
-        success: true,
-        message: "Saved",
-        data: {
-          session_id: session.session_id,
-          nextStepKey: next.step_key,
-          completed: false,
-          complete: false,
-        },
-      });
-    }
+    const nextKey = firstIncomplete ? firstIncomplete.step_key : null;
 
-    // Không còn bước -> hoàn tất
-    await session.update({ is_completed: true, completed_at: new Date() }, { transaction: t });
+    if (nextKey) {
+      await session.update({ current_step_key: nextKey, is_completed: false, completed_at: null }, { transaction: t });
+    } else {
+      await session.update({ current_step_key: null, is_completed: true, completed_at: new Date() }, { transaction: t });
 
-    const user = await User.findByPk(userId, { transaction: t });
-    if (user) {
-      // dùng đúng cột snake_case trong DB
-      await user.update({ onboarding_completed_at: new Date() }, { transaction: t });
+      // Đánh dấu user đã hoàn tất (nếu có cột này)
+      const user = await User.findByPk(userId, { transaction: t });
+      if (user) {
+        await user.update({ onboarding_completed_at: new Date() }, { transaction: t });
+      }
     }
 
     await t.commit();
@@ -170,9 +224,9 @@ export async function saveAnswer(req, res) {
       message: "Saved",
       data: {
         session_id: session.session_id,
-        nextStepKey: null,
-        completed: true,
-        complete: true,
+        nextStepKey: nextKey,
+        completed: !nextKey,
+        complete: !nextKey,
       },
     });
   } catch (err) {
@@ -182,15 +236,16 @@ export async function saveAnswer(req, res) {
   }
 }
 
-// GET /api/onboarding/session
-// Returns overall onboarding status for the current user
+/* =========================
+   GET /api/onboarding/session
+   Trả trạng thái tổng quát (ĐÃ SỬA: luôn tính lại firstIncomplete)
+   ========================= */
 export async function getSessionStatus(req, res) {
   try {
     const userId = req.userId;
     const user = await User.findByPk(userId);
 
     const onboarded = !!(user?.onboarding_completed_at || user?.onboardingCompletedAt);
-
     if (onboarded) {
       return res.json({
         success: true,
@@ -206,20 +261,28 @@ export async function getSessionStatus(req, res) {
       });
     }
 
-    // Try to find an active session
+    // Tìm (hoặc tạo) session active
     let session = await OnboardingSession.findOne({
       where: { user_id: userId, is_completed: false },
       order: [["created_at", "DESC"]],
     });
 
-    // Determine first step
-    const firstStep = await OnboardingStep.findOne({
+    // Lấy toàn bộ steps/fields để tính firstIncomplete
+    const allSteps = await OnboardingStep.findAll({
       where: { is_active: true },
       order: [["order_index", "ASC"]],
     });
+    const stepIds = allSteps.map(s => s.step_id);
+
+    const allFields = await OnboardingField.findAll({
+      where: { step_id: stepIds },
+      order: [["order_index", "ASC"], ["field_id", "ASC"]],
+    });
+    const fieldsByStepId = new Map(stepIds.map(id => [id, []]));
+    for (const f of allFields) fieldsByStepId.get(f.step_id).push(f);
 
     if (!session) {
-      // Check if any completed session exists (fallback)
+      // Nếu từng có session đã hoàn tất → coi như xong
       const completedSession = await OnboardingSession.findOne({
         where: { user_id: userId, is_completed: true },
         order: [["completed_at", "DESC"]],
@@ -239,25 +302,70 @@ export async function getSessionStatus(req, res) {
         });
       }
 
-      // Otherwise, create a new session and set current to first step
+      // Chưa có → tạo mới và set current = step active đầu tiên (nếu có)
       session = await OnboardingSession.create({
         user_id: userId,
-        current_step_key: firstStep ? firstStep.step_key : null,
+        current_step_key: allSteps.length ? allSteps[0].step_key : null,
       });
     }
 
-    const nextKey = session.current_step_key || (firstStep ? firstStep.step_key : null);
-    return res.json({
-      success: true,
-      data: {
-        required: true,
-        completed: false,
-        complete: false,
-        sessionId: session.session_id,
-        currentStepKey: session.current_step_key,
-        nextStepKey: nextKey,
-      },
+    // Đọc các câu trả lời đã lưu cho session này
+    const saved = await OnboardingAnswer.findAll({
+      where: { session_id: session.session_id },
     });
+    const blobByStepId = new Map(saved.map(a => [a.step_id, a.answers || {}]));
+
+    // Tính firstIncomplete
+    let firstIncomplete = null;
+    for (const s of allSteps) {
+      const sFields = fieldsByStepId.get(s.step_id) || [];
+      const blob = blobByStepId.get(s.step_id) || {};
+      if (!isStepCompleteByBlob(sFields, blob)) { firstIncomplete = s; break; }
+    }
+
+    const nextKey = firstIncomplete ? firstIncomplete.step_key : null;
+
+    // Đồng bộ session nếu lệch
+    if (nextKey) {
+      if (session.current_step_key !== nextKey || session.is_completed) {
+        await session.update({ current_step_key: nextKey, is_completed: false, completed_at: null });
+      }
+      return res.json({
+        success: true,
+        data: {
+          required: true,
+          completed: false,
+          complete: false,
+          sessionId: session.session_id,
+          currentStepKey: nextKey,
+          nextStepKey: nextKey,
+          completedAt: null,
+        },
+      });
+    } else {
+      // Không còn bước dở → đánh dấu hoàn tất
+      if (!session.is_completed || session.current_step_key !== null) {
+        await session.update({ is_completed: true, completed_at: new Date(), current_step_key: null });
+      }
+      // Đánh dấu user đã hoàn tất (nếu muốn đồng bộ tại đây)
+      if (!user?.onboarding_completed_at && !user?.onboardingCompletedAt) {
+        const u = await User.findByPk(userId);
+        if (u) await u.update({ onboarding_completed_at: new Date() });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          required: false,
+          completed: true,
+          complete: true,
+          sessionId: session.session_id,
+          currentStepKey: null,
+          nextStepKey: null,
+          completedAt: session.completed_at || new Date(),
+        },
+      });
+    }
   } catch (err) {
     console.error("getSessionStatus error:", err);
     return res.status(500).json({ success: false, message: "Internal server error" });

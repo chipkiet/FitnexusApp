@@ -33,7 +33,7 @@ export default function Login() {
   const [form, setForm] = useState({ identifier: "", password: "", remember: false });
   const [oauthLoading, setOauthLoading] = useState(false);
 
-  const { login, loading, error, oauthLogin } = useAuth();
+  const { login, loading, error, oauthLogin, redirectAfterAuth } = useAuth();
   const navigate = useNavigate();
 
   //+2
@@ -76,28 +76,15 @@ const goSignup = () => {
 const handleSubmit = async (e) => {
   e.preventDefault();
   try {
-    const result = await login({
-      identifier: form.identifier,
-      password: form.password,
-      rememberMe: form.remember,
-    });
-
-    // ✅ kiểm tra session onboarding để điều hướng đúng
-    const { data: sessResp } = await api.get(endpoints.onboarding.session, {
-      params: { t: Date.now() },
-      headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
-    });
-
-    const s = sessResp?.data || {};
-    const needOnboarding = s.required && !(s.completed || s.complete);
-
-    if (needOnboarding) {
-      navigate("/onboarding", { replace: true });
-    } else {
-      const role = result?.data?.user?.role;
-      if (role === "ADMIN") navigate("/admin", { replace: true });
-      else navigate("/dashboard", { replace: true });
-    }
+    await login(
+      {
+        identifier: form.identifier,
+        password: form.password,
+        rememberMe: form.remember,
+      },
+      navigate
+    );
+    // redirectAfterAuth trong context sẽ điều hướng phù hợp (onboarding/home)
   } catch {
     // error đã được context xử lý
   }

@@ -3,13 +3,33 @@ import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/auth.context.jsx";
 
+
+// Pages
 import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
 import Home from "./pages/Home.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import VerifyCode from "./pages/VerifyCode.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
-import Onboarding from "./pages/Onboarding.jsx";
+
+
+
+
+// Onboarding
+import OnboardingAge from "./pages/boardings/OnboardingAge.jsx";
+import OnboardingBody from "./pages/boardings/OnboardingBody.jsx";
+import OnboardingGoal from "./pages/boardings/OnboardingGoal.jsx";
+import OnboardingWeight from "./pages/boardings/OnboardingWeight.jsx";
+import OnboardingHeight from "./pages/boardings/OnboardingHeight.jsx";
+import OnboardingBodyFat from "./pages/boardings/OnboardingBodyFat.jsx";
+import OnboardingExperience from "./pages/boardings/OnboardingExperience.jsx";
+import OnboardingFrequency from "./pages/boardings/OnboardingFrequency.jsx";
+import OnboardingEntry from "./pages/boardings/OnboardingEntry.jsx";
+
+
+
+
+
 
 // Admin
 import AdminLayout from "./layouts/AdminLayout.jsx";
@@ -21,34 +41,12 @@ import Role from "./pages/admin/Role.jsx";
 import Plan from "./pages/admin/Plan.jsx";
 import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
-
-// ========= Guards =========
-function PrivateRoute({ children }) {
-  const { user, loading } = useAuth();
-  const location = useLocation();
-
-  if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  }
-
-  // Chưa đăng nhập -> về /login kèm 'from'
-  if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
-
-  // Đã đăng nhập nhưng chưa xong onboarding -> sang /onboarding kèm 'from'
-  const isOnboarded = Boolean(user.onboardingCompletedAt || user.onboarding_completed_at);
-  if (!isOnboarded) {
-    const from = location.state?.from || location; // giữ from nếu có
-    return <Navigate to="/onboarding" replace state={{ from }} />;
-  }
-
-  return children;
-}
+import PrivateRoute from "./components/routing/PrivateRoute.jsx";
 
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -59,12 +57,14 @@ function AdminRoute({ children }) {
   return user.role === "ADMIN" ? children : <Navigate to="/" replace />;
 }
 
+
 function App() {
   useEffect(() => {
     const handler = (e) => console.log("oauth msg:", e.origin, e.data);
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, []);
+
 
   return (
     <AuthProvider>
@@ -73,10 +73,20 @@ function App() {
           {/* Auth */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/onboarding" element={<OnboardingEntry />} />
+          <Route path="/onboarding" element={<Navigate to="/onboarding/age" replace />} />
+          <Route path="/onboarding/age" element={<OnboardingAge />} />
+          <Route path="/onboarding/body_type" element={<OnboardingBody />} />
+          <Route path="/onboarding/goal" element={<OnboardingGoal />} />
+          <Route path="/onboarding/weight" element={<OnboardingWeight />} />
+          <Route path="/onboarding/height" element={<OnboardingHeight />} />
+          <Route path="/onboarding/level_body_fat" element={<OnboardingBodyFat />} />
+          <Route path="/onboarding/experience_level" element={<OnboardingExperience />} />
+          <Route path="/onboarding/workout_frequency" element={<OnboardingFrequency />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-code" element={<VerifyCode />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+
 
           {/* Main */}
           <Route
@@ -87,6 +97,7 @@ function App() {
               </PrivateRoute>
             }
           />
+
 
           {/* Admin */}
           <Route
@@ -107,6 +118,7 @@ function App() {
             <Route path="finance" element={<AdminFinancialManage />} />
           </Route>
 
+
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -115,4 +127,8 @@ function App() {
   );
 }
 
+
 export default App;
+
+
+
