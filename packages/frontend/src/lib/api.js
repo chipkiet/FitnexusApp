@@ -34,6 +34,13 @@ export const endpoints = {
     google: "/auth/google",
   },
 
+  // Onboarding endpoints
+  onboarding: {
+    session: "/api/onboarding/session",
+    step: (key) => `/api/onboarding/steps/${key}`,
+    answer: (key) => `/api/onboarding/steps/${key}/answer`,
+  },
+
   admin: {
     users: "/api/admin/users",
     userRole: (id) => `/api/admin/users/${id}/role`,

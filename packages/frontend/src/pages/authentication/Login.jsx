@@ -36,7 +36,7 @@ export default function Login() {
   const [form, setForm] = useState({ identifier: "", password: "", remember: false });
   const [oauthLoading, setOauthLoading] = useState(false);
 
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, oauthLogin, redirectAfterAuth } = useAuth();
   const navigate = useNavigate();
 
   const [showNotFound, setShowNotFound] = useState(false);
@@ -67,43 +67,30 @@ export default function Login() {
   };
 
   // ====== Submit bằng email/username + password ======
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const result = await login({
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    await login(
+      {
         identifier: form.identifier,
         password: form.password,
         rememberMe: form.remember,
-      });
-
-      // Lưu token vào tokenManager
-      const accessToken =
-        result?.data?.accessToken ||
-        result?.data?.token ||
-        result?.accessToken ||
-        result?.token;
-      const refreshToken =
-        result?.data?.refreshToken || result?.refreshToken || null;
-
-      if (accessToken) {
-        setTokens(accessToken, refreshToken, !!form.remember);
-      }
-
-      const role = result?.data?.user?.role;
-      if (role === "ADMIN") {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
-    } catch (_) {
-      // error đã được context xử lý
-    }
-  };
+      },
+      navigate
+    );
+    // redirectAfterAuth trong context sẽ điều hướng phù hợp (onboarding/home)
+  } catch {
+    // error đã được context xử lý
+  }
+};
 
   // ====== Đăng nhập bằng Google ======
   const handleGoogleLogin = () => {
     setOauthLoading(true);
     const be = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+    // chuyển tab hiện tại sang BE để bắt đầu OAuth
+    const from = location.state?.from?.pathname;   // ⬅️ lấy from nếu có
+  const url = `${be}/auth/google${from ? `?from=${encodeURIComponent(from)}` : ""}`;
     window.location.href = `${be}/auth/google`;
   };
 

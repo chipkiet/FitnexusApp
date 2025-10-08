@@ -38,6 +38,8 @@ export default function Home() {
     navigate('/login');
   };
 
+  const displayName = (user?.username || "").replaceAll("_", " ");
+
   return (
     <div className="h-screen bg-gradient-to-br from-[#2D1B69] via-[#351C7A] to-[#7B2574]">
       {/* Header */}
@@ -61,7 +63,7 @@ export default function Home() {
                 {user?.username?.[0]?.toUpperCase()}
               </span>
             </div>
-            <span className="text-sm text-white">Welcome, {user?.username}</span>
+            <span className="text-sm text-white no-underline">Welcome, {displayName}</span>
           </div>
 
           {/* Homepage Button */}

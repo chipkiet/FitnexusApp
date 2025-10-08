@@ -1,5 +1,6 @@
+// App.jsx
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/auth.context.jsx";
 
 import Register from "./pages/authentication/Register.jsx";
@@ -20,9 +21,18 @@ import Role from "./pages/admin/Role.jsx";
 import Plan from "./pages/admin/Plan.jsx";
 import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
-
-// (Optional) trang quản lý users nếu bạn có file này
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
+
+// Onboarding pages (multi-step)
+import OnboardingEntry from "./pages/boardings/OnboardingEntry.jsx";
+import OnboardingAge from "./pages/boardings/OnboardingAge.jsx";
+import OnboardingBody from "./pages/boardings/OnboardingBody.jsx";
+import OnboardingGoal from "./pages/boardings/OnboardingGoal.jsx";
+import OnboardingWeight from "./pages/boardings/OnboardingWeight.jsx";
+import OnboardingHeight from "./pages/boardings/OnboardingHeight.jsx";
+import OnboardingBodyFat from "./pages/boardings/OnboardingBodyFat.jsx";
+import OnboardingExperience from "./pages/boardings/OnboardingExperience.jsx";
+import OnboardingFrequency from "./pages/boardings/OnboardingFrequency.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -34,22 +44,29 @@ function PrivateRoute({ children }) {
 
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
+
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
   return user.role === "ADMIN" ? children : <Navigate to="/" replace />;
 }
 
+
 function App() {
   useEffect(() => {
-    // Debug listener để xem FE có nhận message từ popup OAuth hay không
+    // Debug listener để xem FE có nhận được message từ popup Google không
     const handler = (e) => {
       console.log("oauth msg:", e.origin, e.data);
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, []);
+
 
   return (
     <AuthProvider>
@@ -58,15 +75,23 @@ function App() {
           {/* Auth */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/onboarding" element={<Navigate to="/onboarding/age" replace />} />
+          <Route path="/onboarding/entry" element={<OnboardingEntry />} />
+          <Route path="/onboarding/age" element={<OnboardingAge />} />
+          <Route path="/onboarding/body_type" element={<OnboardingBody />} />
+          <Route path="/onboarding/goal" element={<OnboardingGoal />} />
+          <Route path="/onboarding/weight" element={<OnboardingWeight />} />
+          <Route path="/onboarding/height" element={<OnboardingHeight />} />
+          <Route path="/onboarding/level_body_fat" element={<OnboardingBodyFat />} />
+          <Route path="/onboarding/experience_level" element={<OnboardingExperience />} />
+          <Route path="/onboarding/workout_frequency" element={<OnboardingFrequency />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-code" element={<VerifyCode />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Main app routes */}
-          {/* Public landing page at root shows Dashboard */}
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Landing/>} />
 
-          {/* Authenticated dashboard */}
+          {/* Main app routes */}
           <Route
             path="/dashboard"
             element={
@@ -77,7 +102,8 @@ function App() {
           />
 
 
-          {/* Admin pages */}
+
+          {/* Admin */}
           <Route
             path="/admin"
             element={
@@ -98,6 +124,7 @@ function App() {
             <Route path="users" element={<AdminUsers />} />
           </Route>
 
+
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -106,4 +133,7 @@ function App() {
   );
 }
 
+
 export default App;
+
+
