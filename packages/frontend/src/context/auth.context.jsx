@@ -36,6 +36,13 @@ export function AuthProvider({ children }) {
    */
   const redirectAfterAuth = async (navigate) => {
     if (!navigate) return;
+    
+    // Nếu là admin -> vào thẳng trang admin
+    if (user?.role === "ADMIN") {
+      navigate("/admin", { replace: true });
+      return;
+    }
+
     try {
       const r = await api.get(endpoints.onboarding.session, {
         params: { t: Date.now() },
@@ -206,11 +213,20 @@ export function AuthProvider({ children }) {
       const response = await api.post(endpoints.auth.login, payload);
       const { data } = response.data || {};
       if (data?.user && data?.token) {
+        // Lưu token và user info
         setUser(data.user);
         setTokens(data.token, data.refreshToken, !!payload?.rememberMe);
-        // Làm tươi & điều hướng theo onboarding (nếu có navigate)
-        await refreshUser();
-        if (navigate) await redirectAfterAuth(navigate);
+        
+        // Kiểm tra role và redirect
+        if (navigate) {
+          if (data.user.role === "ADMIN") {
+            navigate("/admin", { replace: true });
+          } else {
+            // Nếu là user thường thì check onboarding
+            await refreshUser();
+            await redirectAfterAuth(navigate);
+          }
+        }
       }
       return response.data;
     } catch (err) {
