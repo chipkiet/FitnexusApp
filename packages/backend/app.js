@@ -23,15 +23,31 @@ const app = express();
 const isDev = process.env.NODE_ENV !== 'production';
 const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+// Normalize origins (avoid trailing slashes issues)
+const normalizeOrigin = (url) => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return (url || '').replace(/\/+$/, '');
+  }
+};
+const ALLOWED_ORIGINS = [
+  normalizeOrigin(FRONTEND),
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5178',
+  'http://localhost:5179',
+].filter(Boolean);
+
 // ==== CORS (chỉ cấu hình 1 lần, đặt sớm) ====
 const corsOptions = {
-  origin: [
-    FRONTEND,
-    'http://localhost:5174',
-    'http://localhost:5175',
-    'http://localhost:5178',
-    'http://localhost:5179',
-  ],
+  origin: (origin, cb) => {
+    // allow same-origin or non-browser requests with no Origin header
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    return cb(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires', 'X-Requested-With'],
@@ -40,7 +56,13 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ==== Security & logging ====
-app.use(helmet());
+// Allow OAuth popup to keep window.opener; relax CORP for API usage
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(isDev ? 'dev' : 'combined'));
 }
