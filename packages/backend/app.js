@@ -16,6 +16,7 @@ import trainerRouter from './routes/trainer.routes.js';
 import passport from './config/passport.js';
 import googleAuthRoutes from './routes/auth.js';   // Google OAuth routes under /auth
 import onboardingRouter from './routes/onboarding.routes.js';
+import nutritionRouter from './routes/nutrition.routes.js';
 
 dotenv.config();
 
@@ -90,6 +91,7 @@ app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/trainer', trainerRouter);
 app.use('/api/onboarding', onboardingRouter);
+app.use('/api/nutrition', nutritionRouter);
 
 
 // Google OAuth (session-based)

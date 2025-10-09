@@ -395,6 +395,17 @@ const Fitnexus3DLanding = () => {
               </div>
             ))}
           </div>
+          {/* CTA: chuyển sang Nutrition AI */}
+          <div className="mt-12">
+            <button
+              type="button"
+              onClick={() => navigate('/nutrition-ai')}
+              className="inline-flex items-center gap-2 px-6 py-3 font-semibold text-white transition rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90"
+            >
+              Khám phá Nutrition AI
+              <ChevronRight size={20} />
+            </button>
+          </div>
         </div>
       </section>
 

@@ -41,6 +41,11 @@ export const endpoints = {
     answer: (key) => `/api/onboarding/steps/${key}/answer`,
   },
 
+  // Nutrition endpoints
+  nutrition: {
+    plan: "/api/nutrition/plan",
+  },
+
   admin: {
     users: "/api/admin/users",
     userRole: (id) => `/api/admin/users/${id}/role`,

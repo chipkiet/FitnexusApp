@@ -10,6 +10,8 @@ import ForgotPassword from "./pages/authentication/ForgotPassword.jsx";
 import VerifyCode from "./pages/authentication/VerifyCode.jsx";
 import ResetPassword from "./pages/authentication/ResetPassword.jsx";
 import Landing from "./pages/landing/Landing.jsx";
+import NutritionAI from "./pages/landing/NutritionAI.jsx";
+import NutritionPersonalize from "./pages/landing/NutritionPersonalize.jsx";
 import Dashboard from "./pages/user/Dashboard.jsx";
 
 
@@ -105,6 +107,8 @@ function App() {
           {/* Main app routes */}
           {/* Public landing page at root shows Dashboard */}
           <Route path="/" element={<Landing />} />
+          <Route path="/nutrition-ai" element={<NutritionAI />} />
+          <Route path="/nutrition-ai/personalize" element={<NutritionPersonalize />} />
 
           {/* Authenticated dashboard */}
           <Route
@@ -149,6 +153,4 @@ function App() {
 
 
 export default App;
-
-
 
