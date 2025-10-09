@@ -23,23 +23,24 @@ export function HumanModel({ onBodyPartClick }) {
   // Materials for different states
   const materials = {
     default: new THREE.MeshStandardMaterial({
-      color: 0xd4d4d8,
-      metalness: 0.2,
-      roughness: 0.8
+      color: 0xf5c8a8, // Warm peachy skin tone
+      metalness: 0.1,
+      roughness: 0.7,
+      side: THREE.DoubleSide
     }),
     hover: new THREE.MeshStandardMaterial({
-      color: 0x9f7aea,
-      metalness: 0.3,
+      color: 0xff7744, // Light peach
+      metalness: 0.1,
       roughness: 0.7,
-      emissive: new THREE.Color(0x6b46c1),
-      emissiveIntensity: 0.3
+      emissive: new THREE.Color(0xff9966),
+      emissiveIntensity: 0.1,
     }),
     selected: new THREE.MeshStandardMaterial({
-      color: 0x7c3aed,
-      metalness: 0.3,
-      roughness: 0.7,
-      emissive: new THREE.Color(0x5b21b6),
-      emissiveIntensity: 0.5
+      color: 0xffccaa, // Orange-red
+      metalness: 0.15,
+      roughness: 0.65,
+      emissive: new THREE.Color(0xff5522),
+      emissiveIntensity: 0.2,
     })
   };
 
@@ -47,13 +48,17 @@ export function HumanModel({ onBodyPartClick }) {
   useEffect(() => {
     scene.traverse((node) => {
       if (node.isMesh) {
-        // Save original material for cleanup
-        const originalMaterial = node.material;
+        // Save original material
+        node.userData.originalMaterial = node.material;
+        
         // Apply default material
         node.material = materials.default.clone();
-        // Store original material in userData
-        node.userData.originalMaterial = originalMaterial;
-        // Make interactive
+        
+        // Enable shadows for better depth
+        node.castShadow = true;
+        node.receiveShadow = true;
+        
+        // Mark as interactive
         node.userData.isInteractive = true;
       }
     });
@@ -134,12 +139,21 @@ export function HumanModel({ onBodyPartClick }) {
     // Map mesh names to body parts
     const bodyPartMap = {
       "Body": "chest",
+      "Torso": "chest",
+      "Chest": "chest",
       "Head": "head",
+      "Neck": "neck",
       "LeftArm": "upper arms",
       "RightArm": "upper arms",
+      "LeftForearm": "forearms",
+      "RightForearm": "forearms",
       "LeftLeg": "upper legs",
       "RightLeg": "upper legs",
-      "Torso": "abdominals"
+      "LeftCalf": "lower legs",
+      "RightCalf": "lower legs",
+      "Abdomen": "abdominals",
+      "Back": "back",
+      "Shoulders": "shoulders"
     };
 
     // Get body part name from mesh name or use default

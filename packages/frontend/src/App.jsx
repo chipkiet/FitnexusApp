@@ -4,13 +4,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "r
 import { AuthProvider, useAuth } from "./context/auth.context.jsx";
 
 
-// Pages
-import Register from "./pages/Register.jsx";
-import Login from "./pages/Login.jsx";
-import Home from "./pages/Home.jsx";
-import ForgotPassword from "./pages/ForgotPassword.jsx";
-import VerifyCode from "./pages/VerifyCode.jsx";
-import ResetPassword from "./pages/ResetPassword.jsx";
+import Register from "./pages/authentication/Register.jsx";
+import Login from "./pages/authentication/Login.jsx";
+import ForgotPassword from "./pages/authentication/ForgotPassword.jsx";
+import VerifyCode from "./pages/authentication/VerifyCode.jsx";
+import ResetPassword from "./pages/authentication/ResetPassword.jsx";
+import Landing from "./pages/landing/Landing.jsx";
+import Dashboard from "./pages/user/Dashboard.jsx";
 
 
 
@@ -41,7 +41,17 @@ import Role from "./pages/admin/Role.jsx";
 import Plan from "./pages/admin/Plan.jsx";
 import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
-import PrivateRoute from "./components/routing/PrivateRoute.jsx";
+
+// (Optional) trang quản lý users nếu bạn có file này
+import AdminUsers from "./pages/admin/AdminUsers.jsx";
+
+function PrivateRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+  return user ? children : <Navigate to="/login" replace />;
+}
 
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
@@ -60,7 +70,11 @@ function AdminRoute({ children }) {
 
 function App() {
   useEffect(() => {
-    const handler = (e) => console.log("oauth msg:", e.origin, e.data);
+
+    // Debug listener để xem FE có nhận message từ popup OAuth hay không
+    const handler = (e) => {
+      console.log("oauth msg:", e.origin, e.data);
+    };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, []);
@@ -88,18 +102,22 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
 
 
-          {/* Main */}
+          {/* Main app routes */}
+          {/* Public landing page at root shows Dashboard */}
+          <Route path="/" element={<Landing />} />
+
+          {/* Authenticated dashboard */}
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <PrivateRoute>
-                <Home />
+                <Dashboard />
               </PrivateRoute>
             }
           />
 
 
-          {/* Admin */}
+
           <Route
             path="/admin"
             element={
@@ -116,6 +134,8 @@ function App() {
             <Route path="reset-password" element={<AdminResetPassword />} />
             <Route path="content" element={<AdminContentManage />} />
             <Route path="finance" element={<AdminFinancialManage />} />
+            {/* Thêm route này nếu bạn dùng trang AdminUsers */}
+            <Route path="users" element={<AdminUsers />} />
           </Route>
 
 

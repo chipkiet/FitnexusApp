@@ -3,11 +3,18 @@
   "version": "1.0.0",
   "description": "Monorepo for the Fitnexus application",
   "main": "index.js",
+  "type": "module",
+  "homepage": "https://chipkiet.github.io/FitnexusApp",
   "scripts": {
     "install:all": "npm install",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "xwalk:normalize": "node scripts/normalize_exercise_muscles.js",
+    "xwalk:prepare": "node scripts/normalize_exercise_muscles.js",
+    "xwalk:import": "node scripts/import_exercises.js",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "workspaces": [
     "packages/*"
@@ -16,7 +23,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "gh-pages": "^6.3.0"
   },
   "dependencies": {
     "ioredis": "^5.8.0",
