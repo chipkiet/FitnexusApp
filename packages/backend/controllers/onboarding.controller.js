@@ -42,18 +42,58 @@ async function getStepByKeyWithFields(stepKey) {
   return { step, fields };
 }
 
-// Helper: find/create active session for user
-async function findOrCreateActiveSession(userId, currentStepKey = null) {
-  let session = await OnboardingSession.findOne({
-    where: { user_id: userId, is_completed: false },
-    order: [["created_at", "DESC"]],
-  });
-  if (!session) {
-    session = await OnboardingSession.create({
-      user_id: userId,
-      current_step_key: currentStepKey || null,
+// Resolve or create an active session for current request (logged-in or anonymous)
+async function resolveOrCreateActiveSession(req, suggestedStepKey = null, t = null) {
+  const userId = req.userId || null;
+  const cookieSessionId = req.session?.onboardingSessionId || req.onboardingSessionId || null;
+
+  if (userId) {
+    // Attach anonymous session to user if present
+    if (cookieSessionId) {
+      const anon = await OnboardingSession.findByPk(cookieSessionId, { transaction: t });
+      if (anon) {
+        if (!anon.user_id) {
+          await anon.update({ user_id: userId }, { transaction: t });
+        }
+        return anon;
+      }
+    }
+
+    // Find user's active session
+    let session = await OnboardingSession.findOne({
+      where: { user_id: userId, is_completed: false },
+      order: [["created_at", "DESC"]],
+      transaction: t,
     });
+    if (session) return session;
+
+    // Create new session (prefer reusing cookieSessionId if available)
+    const payload = { user_id: userId, current_step_key: suggestedStepKey || null };
+    if (cookieSessionId) payload.session_id = cookieSessionId;
+    session = await OnboardingSession.create(payload, { transaction: t });
+    if (!req.session?.onboardingSessionId && req.session) {
+      req.session.onboardingSessionId = session.session_id;
+    }
+    return session;
   }
+
+  // Anonymous flow
+  if (cookieSessionId) {
+    let session = await OnboardingSession.findByPk(cookieSessionId, { transaction: t });
+    if (session) return session;
+    session = await OnboardingSession.create(
+      { session_id: cookieSessionId, user_id: null, current_step_key: suggestedStepKey || null },
+      { transaction: t }
+    );
+    return session;
+  }
+
+  // Last resort: create and store cookie mapping
+  const session = await OnboardingSession.create(
+    { user_id: null, current_step_key: suggestedStepKey || null },
+    { transaction: t }
+  );
+  if (req.session) req.session.onboardingSessionId = session.session_id;
   return session;
 }
 
@@ -104,7 +144,6 @@ export async function getStep(req, res) {
 export async function saveAnswer(req, res) {
   const t = await sequelize.transaction();
   try {
-    const userId = req.userId;
     const { key } = req.params;
     const { answers } = req.body || {};
 
@@ -150,8 +189,8 @@ export async function saveAnswer(req, res) {
       return res.status(422).json({ success: false, message: error });
     }
 
-    // session hiện hành
-    const session = await findOrCreateActiveSession(userId, step.step_key);
+    // session hiện hành (user hoặc ẩn danh)
+    const session = await resolveOrCreateActiveSession(req, step.step_key, t);
 
     // upsert answer per (session, step)
     const existing = await OnboardingAnswer.findOne({
@@ -211,10 +250,12 @@ export async function saveAnswer(req, res) {
     } else {
       await session.update({ current_step_key: null, is_completed: true, completed_at: new Date() }, { transaction: t });
 
-      // Đánh dấu user đã hoàn tất (nếu có cột này)
-      const user = await User.findByPk(userId, { transaction: t });
-      if (user) {
-        await user.update({ onboarding_completed_at: new Date() }, { transaction: t });
+      // Nếu đang đăng nhập, đánh dấu user đã hoàn tất
+      if (req.userId) {
+        const user = await User.findByPk(req.userId, { transaction: t });
+        if (user) {
+          await user.update({ onboarding_completed_at: new Date() }, { transaction: t });
+        }
       }
     }
 
@@ -242,30 +283,33 @@ export async function saveAnswer(req, res) {
    ========================= */
 export async function getSessionStatus(req, res) {
   try {
-    const userId = req.userId;
-    const user = await User.findByPk(userId);
-
-    const onboarded = !!(user?.onboarding_completed_at || user?.onboardingCompletedAt);
-    if (onboarded) {
-      return res.json({
-        success: true,
-        data: {
-          required: false,
-          completed: true,
-          complete: true,
-          sessionId: null,
-          currentStepKey: null,
-          nextStepKey: null,
-          completedAt: user.onboarding_completed_at || user.onboardingCompletedAt,
-        },
-      });
+    const userId = req.userId || null;
+    const cookieSessionId = req.session?.onboardingSessionId || req.onboardingSessionId || null;
+    let user = null;
+    if (userId) {
+      user = await User.findByPk(userId);
+      const onboarded = !!(user?.onboarding_completed_at || user?.onboardingCompletedAt);
+      if (onboarded) {
+        return res.json({ success: true, data: { required: false, completed: true, complete: true, sessionId: null, currentStepKey: null, nextStepKey: null, completedAt: user.onboarding_completed_at || user.onboardingCompletedAt } });
+      }
     }
 
     // Tìm (hoặc tạo) session active
-    let session = await OnboardingSession.findOne({
-      where: { user_id: userId, is_completed: false },
-      order: [["created_at", "DESC"]],
-    });
+    let session = null;
+    if (userId) {
+      if (cookieSessionId) {
+        const found = await OnboardingSession.findByPk(cookieSessionId);
+        if (found) {
+          if (!found.user_id) await found.update({ user_id: userId });
+          session = found;
+        }
+      }
+      if (!session) {
+        session = await OnboardingSession.findOne({ where: { user_id: userId, is_completed: false }, order: [["created_at", "DESC"]] });
+      }
+    } else if (cookieSessionId) {
+      session = await OnboardingSession.findByPk(cookieSessionId);
+    }
 
     // Lấy toàn bộ steps/fields để tính firstIncomplete
     const allSteps = await OnboardingStep.findAll({
@@ -283,10 +327,7 @@ export async function getSessionStatus(req, res) {
 
     if (!session) {
       // Nếu từng có session đã hoàn tất → coi như xong
-      const completedSession = await OnboardingSession.findOne({
-        where: { user_id: userId, is_completed: true },
-        order: [["completed_at", "DESC"]],
-      });
+      const completedSession = userId ? await OnboardingSession.findOne({ where: { user_id: userId, is_completed: true }, order: [["completed_at", "DESC"]] }) : null;
       if (completedSession) {
         return res.json({
           success: true,
@@ -303,10 +344,16 @@ export async function getSessionStatus(req, res) {
       }
 
       // Chưa có → tạo mới và set current = step active đầu tiên (nếu có)
-      session = await OnboardingSession.create({
-        user_id: userId,
-        current_step_key: allSteps.length ? allSteps[0].step_key : null,
-      });
+      const firstKey = allSteps.length ? allSteps[0].step_key : null;
+      if (userId) {
+        const payload = { user_id: userId, current_step_key: firstKey };
+        if (cookieSessionId) payload.session_id = cookieSessionId;
+        session = await OnboardingSession.create(payload);
+      } else {
+        const payload = { user_id: null, current_step_key: firstKey };
+        if (cookieSessionId) payload.session_id = cookieSessionId;
+        session = await OnboardingSession.create(payload);
+      }
     }
 
     // Đọc các câu trả lời đã lưu cho session này
@@ -348,9 +395,11 @@ export async function getSessionStatus(req, res) {
         await session.update({ is_completed: true, completed_at: new Date(), current_step_key: null });
       }
       // Đánh dấu user đã hoàn tất (nếu muốn đồng bộ tại đây)
-      if (!user?.onboarding_completed_at && !user?.onboardingCompletedAt) {
+      if (userId) {
         const u = await User.findByPk(userId);
-        if (u) await u.update({ onboarding_completed_at: new Date() });
+        if (u && !(u.onboarding_completed_at || u.onboardingCompletedAt)) {
+          await u.update({ onboarding_completed_at: new Date() });
+        }
       }
 
       return res.json({

@@ -125,7 +125,10 @@ const Fitnexus3DLanding = () => {
             <p className="max-w-3xl mx-auto mb-12 text-xl text-gray-300 md:text-2xl">
               Fitnexus kết hợp sức mạnh của AI và chuyên môn của các nhà khoa học thể thao để tạo ra kế hoạch luyện tập tốt nhất cho bạn.
             </p>
-            <button className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold text-black transition bg-white rounded-full hover:bg-gray-200 group">
+            <button
+              className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold text-black transition bg-white rounded-full hover:bg-gray-200 group"
+              onClick={() => navigate('/onboarding/entry')}
+            >
               Nhận kế hoạch luyện tập cá nhân hóa
               <ChevronRight className="transition-transform group-hover:translate-x-1" size={24} />
             </button>

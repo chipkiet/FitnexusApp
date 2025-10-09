@@ -1,11 +1,11 @@
 import express from "express";
-import authOrSession from "../middleware/authOrSession.guard.js";
+import onboardingSessionGuard from "../middleware/onboardingSession.guard.js";
 import { getStep, saveAnswer, getSessionStatus } from "../controllers/onboarding.controller.js";
 
 const router = express.Router();
 
 // Require auth (JWT or session)
-router.use(authOrSession);
+router.use(onboardingSessionGuard);
 
 // Session status
 router.get("/session", getSessionStatus);
