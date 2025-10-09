@@ -42,17 +42,24 @@ async function getStepByKeyWithFields(stepKey) {
   return { step, fields };
 }
 
-// Helper: find/create active session for user
-async function findOrCreateActiveSession(userId, currentStepKey = null) {
+// Helper: find/create active session for user (concurrency-safe when provided a transaction)
+async function findOrCreateActiveSession(userId, currentStepKey = null, t = null) {
+  if (t) {
+    // Lock the user row as a per-user mutex
+    await User.findByPk(userId, { transaction: t, lock: Transaction.LOCK.UPDATE });
+  }
+
   let session = await OnboardingSession.findOne({
     where: { user_id: userId, is_completed: false },
     order: [["created_at", "DESC"]],
+    ...(t ? { transaction: t, lock: Transaction.LOCK.UPDATE } : {}),
   });
+
   if (!session) {
-    session = await OnboardingSession.create({
-      user_id: userId,
-      current_step_key: currentStepKey || null,
-    });
+    session = await OnboardingSession.create(
+      { user_id: userId, current_step_key: currentStepKey || null },
+      t ? { transaction: t } : {}
+    );
   }
   return session;
 }
@@ -150,8 +157,8 @@ export async function saveAnswer(req, res) {
       return res.status(422).json({ success: false, message: error });
     }
 
-    // session hiện hành
-    const session = await findOrCreateActiveSession(userId, step.step_key);
+    // session hiện hành (dùng cùng transaction để tránh tạo trùng)
+    const session = await findOrCreateActiveSession(userId, step.step_key, t);
 
     // upsert answer per (session, step)
     const existing = await OnboardingAnswer.findOne({
@@ -302,10 +309,27 @@ export async function getSessionStatus(req, res) {
         });
       }
 
-      // Chưa có → tạo mới và set current = step active đầu tiên (nếu có)
-      session = await OnboardingSession.create({
-        user_id: userId,
-        current_step_key: allSteps.length ? allSteps[0].step_key : null,
+      // Chưa có → tạo mới một cách an toàn (khóa theo user để tránh tạo trùng)
+      await sequelize.transaction(async (t) => {
+        // per-user mutex
+        await User.findByPk(userId, { transaction: t, lock: Transaction.LOCK.UPDATE });
+        const existing = await OnboardingSession.findOne({
+          where: { user_id: userId, is_completed: false },
+          order: [["created_at", "DESC"]],
+          transaction: t,
+          lock: Transaction.LOCK.UPDATE,
+        });
+        if (existing) {
+          session = existing;
+        } else {
+          session = await OnboardingSession.create(
+            {
+              user_id: userId,
+              current_step_key: allSteps.length ? allSteps[0].step_key : null,
+            },
+            { transaction: t }
+          );
+        }
       });
     }
 
