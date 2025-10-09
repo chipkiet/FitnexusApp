@@ -254,6 +254,12 @@ export function AuthProvider({ children }) {
       console.error("Logout error:", error);
     } finally {
       setLoading(false);
+      // Always send users to landing page after logout
+      try {
+        window.location.replace("/");
+      } catch (_) {
+        // fallback no-op
+      }
     }
   };
 

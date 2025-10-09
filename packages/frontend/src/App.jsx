@@ -33,6 +33,13 @@ import OnboardingHeight from "./pages/boardings/OnboardingHeight.jsx";
 import OnboardingBodyFat from "./pages/boardings/OnboardingBodyFat.jsx";
 import OnboardingExperience from "./pages/boardings/OnboardingExperience.jsx";
 import OnboardingFrequency from "./pages/boardings/OnboardingFrequency.jsx";
+import PlanPreview from "./pages/boardings/PlanPreview.jsx";
+import ExerciseLibrary from "./pages/exercise/Library.jsx";
+import CaloriesPage from "./pages/nutrition/Calories.jsx";
+import DemoExercise from "./pages/exercise/DemoExercise.jsx";
+import DemoNutrition from "./pages/nutrition/DemoNutrition.jsx";
+import LandingModel from "./pages/model3d/LandingModel.jsx";
+import LoginModel from "./pages/model3d/LoginModel.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -85,9 +92,18 @@ function App() {
           <Route path="/onboarding/level_body_fat" element={<OnboardingBodyFat />} />
           <Route path="/onboarding/experience_level" element={<OnboardingExperience />} />
           <Route path="/onboarding/workout_frequency" element={<OnboardingFrequency />} />
+          <Route path="/plan-preview" element={<PlanPreview />} />
+          <Route path="/exercise/library" element={<ExerciseLibrary />} />
+          <Route path="/nutrition/calories" element={<CaloriesPage />} />
+          <Route path="/exercise/demo" element={<DemoExercise />} />
+          <Route path="/nutrition/demo" element={<DemoNutrition />} />
+          <Route path="/model3d" element={<LandingModel />} />
+          <Route path="/model3d/studio" element={<LoginModel />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-code" element={<VerifyCode />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/landing-model" element={<LandingModel/>} />
+
 
           <Route path="/" element={<Landing/>} />
 
@@ -135,5 +151,3 @@ function App() {
 
 
 export default App;
-
-

@@ -42,6 +42,23 @@ async function getStepByKeyWithFields(stepKey) {
   return { step, fields };
 }
 
+// Helper: resolve current session without creating a new one (prefer active, then last completed)
+async function resolveExistingSession(req) {
+  const userId = req.userId || null;
+  const cookieSessionId = req.session?.onboardingSessionId || req.onboardingSessionId || null;
+
+  if (cookieSessionId) {
+    const s = await OnboardingSession.findByPk(cookieSessionId);
+    if (s) return s;
+  }
+  if (userId) {
+    let s = await OnboardingSession.findOne({ where: { user_id: userId, is_completed: false }, order: [["created_at", "DESC"]] });
+    if (s) return s;
+    s = await OnboardingSession.findOne({ where: { user_id: userId, is_completed: true }, order: [["completed_at", "DESC"]] });
+    if (s) return s;
+  }
+  return null;
+}
 // Resolve or create an active session for current request (logged-in or anonymous)
 async function resolveOrCreateActiveSession(req, suggestedStepKey = null, t = null) {
   const userId = req.userId || null;
@@ -418,5 +435,40 @@ export async function getSessionStatus(req, res) {
   } catch (err) {
     console.error("getSessionStatus error:", err);
     return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+}
+
+/* =========================
+   GET /api/onboarding/answers
+   Return all saved answers for current session (anonymous or user)
+   ========================= */
+export async function getAnswers(req, res) {
+  try {
+    const session = await resolveExistingSession(req);
+    if (!session) return res.status(404).json({ success: false, message: 'No onboarding session' });
+
+    const rows = await OnboardingAnswer.findAll({
+      where: { session_id: session.session_id },
+      include: [{ model: OnboardingStep, as: 'step', attributes: ['step_id', 'step_key'] }],
+      order: [["created_at", "ASC"]],
+    });
+
+    const items = rows.map(r => ({
+      step_id: r.step_id,
+      step_key: r.step?.step_key || null,
+      answers: r.answers || {},
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        sessionId: session.session_id,
+        isCompleted: !!session.is_completed,
+        answers: items,
+      },
+    });
+  } catch (err) {
+    console.error('getAnswers error:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }

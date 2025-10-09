@@ -24,15 +24,13 @@ export default function OnboardingEntry() {
         const step = String(d?.nextStepKey || d?.currentStepKey || "age").toLowerCase();
 
         if (completed) {
-          // ✅ Đã hoàn tất tất cả onboarding → về trang chủ
-          navigate("/", { replace: true });
+          navigate("/plan-preview", { replace: true });
         } else {
-          // 🚀 Còn bước dở → chuyển sang đúng bước đang dở
           navigate(`/onboarding/${step}`, { replace: true });
         }
       } catch (err) {
         console.error("onboarding entry error:", err);
-        // ❗ Nếu lỗi (chưa login / mất token) → chuyển về login
+      // Nếu lỗi (chưa login / mất token) → chuyển về login
         navigate("/login", { replace: true });
       }
     })();
@@ -43,7 +41,7 @@ export default function OnboardingEntry() {
   }, [navigate]);
 
   return (
-    <div className="h-screen flex items-center justify-center text-gray-600">
+    <div className="flex items-center justify-center h-screen text-gray-600">
       <p>Đang kiểm tra tiến trình onboarding...</p>
     </div>
   );

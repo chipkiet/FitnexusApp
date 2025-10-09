@@ -12,6 +12,7 @@ export async function submitOnboardingAnswer({
   navigate,
   refreshUser,   // từ useAuth()
   markOnboarded, // từ useAuth()
+  isAuthenticated, // optional: function () => boolean
 }) {
   const res = await api.post(`/api/onboarding/steps/${stepKey}/answer`, { answers });
   const data = res?.data?.data || {};
@@ -21,7 +22,8 @@ export async function submitOnboardingAnswer({
   if (completed) {
     try { await refreshUser?.(); } catch {}
     try { markOnboarded?.(); } catch {}
-    navigate("/", { replace: true });
+    const authed = typeof isAuthenticated === 'function' ? !!isAuthenticated() : false;
+    navigate(authed ? "/" : "/plan-preview", { replace: true });
   } else {
     navigate(`/onboarding/${next}`, { replace: true });
   }

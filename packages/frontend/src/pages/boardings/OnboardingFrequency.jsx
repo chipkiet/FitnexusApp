@@ -9,7 +9,7 @@ import { useOnboardingGuard } from "../../hooks/useOnboardingGuard";
 export default function OnboardingFrequency() {
     useOnboardingGuard("workout_frequency");
   const navigate = useNavigate();
-  const { refreshUser, markOnboarded } = useAuth();
+  const { refreshUser, markOnboarded, isAuthenticated } = useAuth();
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -48,6 +48,7 @@ export default function OnboardingFrequency() {
        navigate,
        refreshUser,
       markOnboarded,
+       isAuthenticated,
      });
     } catch (e) {
       const status = e?.response?.status;

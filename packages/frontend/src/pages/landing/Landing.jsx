@@ -1,5 +1,6 @@
 import React, { useState, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
+import api, { endpoints } from "../../lib/api.js";
 import {
   Activity,
   Zap,
@@ -66,9 +67,13 @@ const Fitnexus3DLanding = () => {
             Fitnexus
           </div>
           <nav className="hidden gap-8 md:flex">
-            <a href="#features" className="transition hover:text-blue-400">
-              Mô hình hoá
-            </a>
+            <button
+              onClick={async () => {
+                navigate('/landing-model', {replace: true});
+              }}
+            >
+              Mô hình 3D
+            </button>
             <a href="#library" className="transition hover:text-blue-400">
               Thư viện tập
             </a>
@@ -127,7 +132,26 @@ const Fitnexus3DLanding = () => {
             </p>
             <button
               className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold text-black transition bg-white rounded-full hover:bg-gray-200 group"
-              onClick={() => navigate('/onboarding/entry')}
+              onClick={async () => {
+                try {
+                  const r = await api.get(endpoints.onboarding.session, {
+                    params: { t: Date.now() },
+                    headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+                    withCredentials: true,
+                  });
+                  const d = r?.data?.data || {};
+                  const completed = !!(d.completed || d.complete || !d.required);
+                  if (completed) {
+                    navigate('/plan-preview', { replace: true });
+                  } else {
+                    const step = String(d.nextStepKey || d.currentStepKey || 'age').toLowerCase();
+                    navigate(`/onboarding/${step}`, { replace: true });
+                  }
+                } catch {
+                  // Fallback: vào entry để backend quyết định
+                  navigate('/onboarding/entry', { replace: true });
+                }
+              }}
             >
               Nhận kế hoạch luyện tập cá nhân hóa
               <ChevronRight className="transition-transform group-hover:translate-x-1" size={24} />

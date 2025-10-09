@@ -12,7 +12,7 @@ export default function OnboardingExperience() {
   const [dangLuu, setDangLuu] = useState(false);
   const [loi, setLoi] = useState(null);
   const navigate = useNavigate();
-  const { refreshUser, markOnboarded } = useAuth();
+  const { refreshUser, markOnboarded, isAuthenticated } = useAuth();
 
   // Khớp seed backend: BEGINNER | INTERMEDIATE | ADVANCED
   const OPTIONS = [
@@ -47,6 +47,7 @@ export default function OnboardingExperience() {
        navigate,
        refreshUser,
        markOnboarded,
+       isAuthenticated,
     });
     } catch (err) {
       const status = err?.response?.status;

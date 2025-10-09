@@ -6,7 +6,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
 import Alert from "../../components/common/Alert.jsx";
 import api, { endpoints } from "../../lib/api.js";
-import { setTokens } from "../../lib/tokenManager.js"; // ✅ thêm
+import { setTokens } from "../../lib/tokenManager.js"; 
 
 function OAuthNotFoundModal({ email, onClose, onSignup }) {
   return (

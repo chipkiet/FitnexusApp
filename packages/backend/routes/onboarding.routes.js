@@ -1,6 +1,6 @@
 import express from "express";
 import onboardingSessionGuard from "../middleware/onboardingSession.guard.js";
-import { getStep, saveAnswer, getSessionStatus } from "../controllers/onboarding.controller.js";
+import { getStep, saveAnswer, getSessionStatus, getAnswers } from "../controllers/onboarding.controller.js";
 
 const router = express.Router();
 
@@ -9,6 +9,8 @@ router.use(onboardingSessionGuard);
 
 // Session status
 router.get("/session", getSessionStatus);
+// Get all answers for current (or last) session
+router.get("/answers", getAnswers);
 
 // Fetch step definition (e.g., age)
 router.get("/steps/:key", getStep);
