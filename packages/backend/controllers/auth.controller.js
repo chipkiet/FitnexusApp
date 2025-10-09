@@ -1,3 +1,4 @@
+// packages/backend/controllers/auth.controller.js
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
@@ -9,38 +10,28 @@ import { sendMail } from "../utils/mailer.js";
 import { buildResetPasswordEmail } from "../utils/emailTemplates.js";
 
 const generateTokens = (userId, role, rememberMe = false) => {
-
-  const accessTokenExpiry = rememberMe ? '30d': '4h';
-
+  const accessTokenExpiry = rememberMe ? "30d" : "4h";
   const accessToken = jwt.sign(
-    {
-      sub: userId,
-      role,
-      type: "access",
-      rememberMe
-    },
+    { sub: userId, role, type: "access", rememberMe },
     process.env.JWT_SECRET,
-    { expiresIn: accessTokenExpiry}
+    { expiresIn: accessTokenExpiry }
   );
 
-  let refreshToken = null ;
-  if(rememberMe )  {
+  let refreshToken = null;
+  if (rememberMe) {
     refreshToken = jwt.sign(
-      {
-        sub: userId,
-        type: 'refresh'
-      },
+      { sub: userId, type: "refresh" },
       process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: "30d" }
     );
   }
-  return {accessToken, refreshToken, expiresIn: accessTokenExpiry};
+  return { accessToken, refreshToken, expiresIn: accessTokenExpiry };
 };
 
 // Ẩn passwordHash, providerId khi trả user
 const getUserData = (user) => {
   const { passwordHash, providerId, ...userData } = user.toJSON();
-  return userData;
+  return userData; // giữ nguyên isSuperAdmin, parentAdminId, v.v…
 };
 
 export const register = async (req, res) => {
@@ -56,9 +47,9 @@ export const register = async (req, res) => {
 
     const { username, email, password, fullName, phone } = req.body;
 
-    // Kiểm tra trùng email/username
+    // Kiểm tra trùng email/username/phone
     const existingUser = await User.findOne({
-      where: { [Op.or]: [{ email }, { username }, {phone}] },
+      where: { [Op.or]: [{ email }, { username }, { phone }] },
     });
 
     if (existingUser) {
@@ -73,10 +64,9 @@ export const register = async (req, res) => {
         field = "phone";
         message = "Số điện thoại đã tồn tại";
       }
-      
       return res.status(400).json({
         success: false,
-        message: message,
+        message,
         errors: [{ field, message }],
       });
     }
@@ -91,7 +81,11 @@ export const register = async (req, res) => {
       status: "ACTIVE",
     });
 
-    const { accessToken, refreshToken } = generateTokens(newUser.user_id, newUser.role, false);
+    const { accessToken, refreshToken } = generateTokens(
+      newUser.user_id,
+      newUser.role,
+      false
+    );
 
     res.status(201).json({
       success: true,
@@ -128,42 +122,53 @@ export const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    // 🚫 Nếu bị khóa thì chặn luôn (kèm email để FE show modal)
+    if (user.isLocked) {
+      return res.status(423).json({
         success: false,
-        message: "Invalid credentials",
+        code: "ACCOUNT_LOCKED",
+        message: "Tài khoản của bạn đã bị khóa",
+        email: user.email,
+        data: {
+          lockedAt: user.lockedAt,
+          lockReason: user.lockReason || "Không rõ lý do",
+        },
       });
     }
 
-    // Nếu tài khoản không có passwordHash (tài khoản social hoặc dữ liệu cũ), coi như invalid
+    // Không có passwordHash (tài khoản social) => invalid
     if (!user.passwordHash) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
     const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
     if (user.status !== "ACTIVE") {
       return res.status(403).json({
         success: false,
+        code: "ACCOUNT_INACTIVE",
         message: "Account is not active",
+        status: user.status,
       });
     }
 
     user.lastLoginAt = new Date();
-    await user.save({ fields: ["lastLoginAt"] });
+    user.lastActiveAt = new Date();
+    user.status = "ACTIVE";
+    await user.save({ fields: ["lastLoginAt", "lastActiveAt"] });
 
-    const { accessToken, refreshToken } = generateTokens(user.user_id, user.role, rememberMe);
+    const { accessToken, refreshToken } = generateTokens(
+      user.user_id, user.role, rememberMe
+    );
 
     const responseData = {
-      user: getUserData(user),
+      user: getUserData(user), // gồm cả isSuperAdmin, parentAdminId
       token: accessToken,
       ...(refreshToken ? { refreshToken } : {}),
       rememberMe,
@@ -174,52 +179,58 @@ export const login = async (req, res) => {
       message: "Login successful",
       data: responseData,
     });
-
-
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-// new endpoint for refresh Token 
+// new endpoint for refresh Token
 export const refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-
     if (!refreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Refresh token required",
-      });
+      return res.status(401).json({ success: false, message: "Refresh token required" });
     }
 
     const payload = jwt.verify(
       refreshToken,
       process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
     );
+    if (payload.type !== "refresh") {
+      return res.status(401).json({ success: false, message: "Invalid refresh token" });
+    }
 
-    if (payload.type !== 'refresh') {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid refresh token",
-      });
-    }
     const user = await User.findByPk(payload.sub);
-    if (!user || user.status !== "ACTIVE") {
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Invalid refresh token" });
+    }
+
+    // 🚫 Chặn luôn nếu tài khoản bị khóa trong lúc đang có refresh token
+    if (user.isLocked) {
+      return res.status(423).json({
+        success: false,
+        code: "ACCOUNT_LOCKED",
+        message: "Tài khoản của bạn đã bị khóa",
+        email: user.email,
+        data: {
+          lockedAt: user.lockedAt,
+          lockReason: user.lockReason || "Không rõ lý do",
+        },
+      });
+    }
+
+    if (user.status !== "ACTIVE") {
       return res.status(401).json({
         success: false,
         message: "Invalid refresh token",
+        status: user.status,
       });
     }
-    // On refresh, issue a new access token and rotate refresh token
+
+    // Issue new access & rotate refresh
     const { accessToken, refreshToken: newRefreshToken } = generateTokens(
-      user.user_id,
-      user.role,
-      true
+      user.user_id, user.role, true
     );
 
     return res.status(200).json({
@@ -228,15 +239,12 @@ export const refreshToken = async (req, res) => {
       data: {
         token: accessToken,
         refreshToken: newRefreshToken,
-        user: getUserData(user),
+        user: getUserData(user), // giữ các flag quyền hạn
       },
     });
   } catch (error) {
     console.error("Refresh token error in auth.controller:", error);
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired refresh token",
-    });
+    return res.status(401).json({ success: false, message: "Invalid or expired refresh token" });
   }
 };
 
@@ -244,10 +252,7 @@ export const me = async (req, res) => {
   try {
     const user = await User.findByPk(req.userId);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
     return res.json({
       success: true,
@@ -256,10 +261,7 @@ export const me = async (req, res) => {
     });
   } catch (error) {
     console.error("Me error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -267,18 +269,10 @@ export const me = async (req, res) => {
 export const checkUsername = async (req, res) => {
   try {
     const { username } = req.query;
-    
     if (!username) {
-      return res.status(400).json({
-        success: false,
-        message: "Username is required",
-      });
+      return res.status(400).json({ success: false, message: "Username is required" });
     }
-
-    const existingUser = await User.findOne({
-      where: { username },
-    });
-
+    const existingUser = await User.findOne({ where: { username } });
     return res.json({
       success: true,
       available: !existingUser,
@@ -286,10 +280,7 @@ export const checkUsername = async (req, res) => {
     });
   } catch (error) {
     console.error("Check username error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -297,18 +288,10 @@ export const checkUsername = async (req, res) => {
 export const checkEmail = async (req, res) => {
   try {
     const { email } = req.query;
-    
     if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is required",
-      });
+      return res.status(400).json({ success: false, message: "Email is required" });
     }
-
-    const existingUser = await User.findOne({
-      where: { email },
-    });
-
+    const existingUser = await User.findOne({ where: { email } });
     return res.json({
       success: true,
       available: !existingUser,
@@ -316,10 +299,7 @@ export const checkEmail = async (req, res) => {
     });
   } catch (error) {
     console.error("Check email error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -327,18 +307,10 @@ export const checkEmail = async (req, res) => {
 export const checkPhone = async (req, res) => {
   try {
     const { phone } = req.query;
-    
     if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: "Phone is required",
-      });
+      return res.status(400).json({ success: false, message: "Phone is required" });
     }
-
-    const existingUser = await User.findOne({
-      where: { phone },
-    });
-
+    const existingUser = await User.findOne({ where: { phone } });
     return res.json({
       success: true,
       available: !existingUser,
@@ -346,10 +318,7 @@ export const checkPhone = async (req, res) => {
     });
   } catch (error) {
     console.error("Check phone error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -362,7 +331,7 @@ export const forgotPassword = async (req, res, next) => {
     }
 
     const user = await User.findOne({ where: { email } });
-    // Luôn trả 200 để tránh dò email
+    // vẫn trả lỗi rõ để UX tốt (bạn đang return 404)
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -378,7 +347,7 @@ export const forgotPassword = async (req, res, next) => {
     const ttlMin = Number(process.env.RESET_TOKEN_TTL_MIN || 15);
     const expiresAt = new Date(Date.now() + ttlMin * 60 * 1000);
 
-    // Tuỳ chọn: vô hiệu token cũ chưa dùng
+    // Vô hiệu token cũ chưa dùng
     await PasswordReset.update(
       { used_at: new Date() },
       { where: { user_id: user.user_id, used_at: null } }
@@ -391,7 +360,8 @@ export const forgotPassword = async (req, res, next) => {
       used_at: null,
     });
 
-    const resetBase = process.env.FRONTEND_RESET_URL || `${process.env.FRONTEND_URL}/reset-password`;
+    const resetBase =
+      process.env.FRONTEND_RESET_URL || `${process.env.FRONTEND_URL}/reset-password`;
     const resetUrl = new URL(resetBase);
     resetUrl.searchParams.set("token", token);
 
@@ -413,17 +383,12 @@ export const forgotPassword = async (req, res, next) => {
   }
 };
 
-
 // ========= RESET PASSWORD =========
 export const resetPassword = async (req, res, next) => {
   try {
     const { token, newPassword } = req.body ?? {};
-
     if (!token || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Token and newPassword are required",
-      });
+      return res.status(400).json({ success: false, message: "Token and newPassword are required" });
     }
 
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
@@ -438,10 +403,7 @@ export const resetPassword = async (req, res, next) => {
     });
 
     if (!pr) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid or expired token",
-      });
+      return res.status(400).json({ success: false, message: "Invalid or expired token" });
     }
 
     const user = await User.findByPk(pr.user_id);
@@ -459,11 +421,33 @@ export const resetPassword = async (req, res, next) => {
     pr.used_at = new Date();
     await pr.save();
 
-    return res.json({
-      success: true,
-      message: "Password has been reset successfully",
-    });
+    return res.json({ success: true, message: "Password has been reset successfully" });
   } catch (err) {
     next(err);
+  }
+};
+// ========= LOGOUT =========
+export const logout = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Cập nhật trạng thái khi logout
+    user.status = "INACTIVE";
+    user.lastActiveAt = null; // ✅ xoá luôn để admin không tính là ACTIVE
+    await user.save({ fields: ["status", "lastActiveAt"] });
+
+    // Nếu bạn lưu token client-side, FE chỉ cần xoá localStorage/sessionStorage.
+    return res.json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+// src/pages/admin/AdminUsers.jsx
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/auth.context.jsx";
-import { getAdminUsers, patchUserRole } from "../lib/api.js";
-
+import { getAdminUsers } from "../lib/api.js";
 const PLANS = ["ALL", "FREE", "PREMIUM"];
-const ROLES = ["USER", "TRAINER", "ADMIN"];
+const ACTIVE_WINDOW_MIN = 5; // trong vòng 5 phút thì coi là ACTIVE
+const AUTORELOAD_SEC = 30;   // auto reload danh sách mỗi 30s
 
 export default function AdminUsers() {
   const { user } = useAuth();
@@ -17,10 +18,9 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
-  const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState(null);
 
-  // Sync "plan" từ URL vào state (chạy khi URL đổi)
+  // đồng bộ query plan -> state
   useEffect(() => {
     const p = (searchParams.get("plan") || "ALL").toUpperCase();
     setPlanFilter(PLANS.includes(p) ? p : "ALL");
@@ -34,7 +34,7 @@ export default function AdminUsers() {
       const res = await getAdminUsers({
         limit,
         offset,
-        search,
+        search: search.trim(),
         plan: planFilter !== "ALL" ? planFilter : undefined,
       });
       setItems(res?.data?.items || []);
@@ -51,26 +51,62 @@ export default function AdminUsers() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit, offset, planFilter]);
 
+  // Tự động làm mới danh sách
+  const timerRef = useRef(null);
+  useEffect(() => {
+    timerRef.current = setInterval(() => load(), AUTORELOAD_SEC * 1000);
+    return () => clearInterval(timerRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit, offset, planFilter, search]);
+
   const onSearch = async (e) => {
     e.preventDefault();
     setOffset(0);
     await load();
   };
 
-  const onChangeRole = async (id, role) => {
-    try {
-      setSavingId(id);
-      await patchUserRole(id, role);
-      setItems((prev) => prev.map((u) => (u.user_id === id ? { ...u, role } : u)));
-    } catch (e) {
-      alert(e?.response?.data?.message || "Update role failed");
-    } finally {
-      setSavingId(null);
-    }
-  };
-
   const page = Math.floor(offset / limit) + 1;
   const pages = Math.max(1, Math.ceil(total / limit));
+
+  // ===== Helpers hiển thị =====
+  const PlanBadge = ({ plan }) => (
+    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+      {plan}
+    </span>
+  );
+
+  function getActivityStatus(u) {
+    // nếu DB đang gắn BANNED thì hiển thị đỏ, ưu tiên hơn
+    if (String(u.status || "").toUpperCase() === "BANNED") return "BANNED";
+    if (!u.lastLoginAt) return "INACTIVE";
+    const last = new Date(u.lastLoginAt);
+    if (isNaN(+last)) return "INACTIVE";
+    const diffMin = (Date.now() - last.getTime()) / (1000 * 60);
+    return diffMin <= ACTIVE_WINDOW_MIN ? "ACTIVE" : "INACTIVE";
+  }
+
+  const StatusBadge = ({ user }) => {
+    const s = getActivityStatus(user);
+    const cls =
+      s === "ACTIVE"
+        ? "bg-green-100 text-green-800"
+        : s === "BANNED"
+        ? "bg-red-100 text-red-800"
+        : "bg-yellow-100 text-yellow-800";
+    const lastSeen =
+      user.lastLoginAt
+        ? new Date(user.lastLoginAt).toLocaleString()
+        : "Never";
+
+    return (
+      <span
+        title={`Last seen: ${lastSeen}`}
+        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${cls}`}
+      >
+        {s}
+      </span>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -150,22 +186,10 @@ export default function AdminUsers() {
               ) : null}
             </div>
           </form>
-        </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-600">{error.message || "Error"}</p>
-              </div>
-            </div>
+          <div className="mt-2 text-xs text-gray-400">
+            Auto refresh every {AUTORELOAD_SEC}s • Active window: {ACTIVE_WINDOW_MIN} minutes
           </div>
-        )}
+        </div>
 
         {/* Table */}
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
@@ -207,32 +231,21 @@ export default function AdminUsers() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.user_id}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u.username}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
+
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <select
-                          className="border border-gray-300 rounded-md shadow-sm py-1.5 pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
-                          value={u.role}
-                          disabled={savingId === u.user_id}
-                          onChange={(e) => onChangeRole(u.user_id, e.target.value)}
-                        >
-                          {ROLES.map((r) => (
-                            <option key={r} value={r}>{r}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          {u.plan}
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {u.role}
                         </span>
                       </td>
+
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            u.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {u.status}
-                        </span>
+                        <PlanBadge plan={u.plan} />
                       </td>
+
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge user={u} />
+                      </td>
+
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "-"}
                       </td>
@@ -258,7 +271,7 @@ export default function AdminUsers() {
               Page <span className="font-medium">{page}</span> of <span className="font-medium">{pages}</span>
             </span>
             <button
-              className="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => setOffset(offset + limit)}
               disabled={offset + limit >= total}
             >
