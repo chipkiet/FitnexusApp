@@ -11,6 +11,8 @@ export default function Dashboard() {
     navigate("/login", { replace: true });
   };
 
+  const displayName = (user?.username || "").replaceAll("_", " ");
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
       <div className="container mx-auto px-4 py-8">
@@ -28,7 +30,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Welcome back,</p>
-                    <p className="font-semibold text-gray-800">{user.username}</p>
+                    <p className="font-semibold text-gray-800">{displayName}</p>
                   </div>
                 </div>
               )}
