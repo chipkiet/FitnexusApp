@@ -1,11 +1,12 @@
 // packages/frontend/src/pages/boardings/OnboardingEntry.jsx
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/auth.context";
 import api from "../../lib/api";
 
 export default function OnboardingEntry() {
   const navigate = useNavigate();
-
+  const { guestSession, initGuestOnboarding } = useAuth();
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -30,11 +31,29 @@ export default function OnboardingEntry() {
           // 🚀 Còn bước dở → chuyển sang đúng bước đang dở
           navigate(`/onboarding/${step}`, { replace: true });
         }
+      // } catch (err) {
+      //   console.error("onboarding entry error:", err);
+      //   // ❗ Nếu lỗi (chưa login / mất token) → chuyển về login
+      //   navigate("/login", { replace: true });
+      // }
+
       } catch (err) {
-        console.error("onboarding entry error:", err);
-        // ❗ Nếu lỗi (chưa login / mất token) → chuyển về login
-        navigate("/login", { replace: true });
-      }
+  console.error("onboarding entry error:", err);
+
+  if (guestSession) {
+    // guest đã có session → cho bắt đầu từ age
+    navigate("/onboarding/age", { replace: true });
+  } else {
+    // chưa có guestSession → tạo mới
+    const d = await initGuestOnboarding();
+    if (d?.session_id) {
+      const step = String(d?.nextStepKey || d?.currentStepKey || "age").toLowerCase();
+      navigate(`/onboarding/${step}`, { replace: true });
+    } else {
+      navigate("/login", { replace: true });
+    }
+  }
+}
     })();
 
     return () => {

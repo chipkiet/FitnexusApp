@@ -44,24 +44,38 @@ async function getStepByKeyWithFields(stepKey) {
 
 // Helper: find/create active session for user (concurrency-safe when provided a transaction)
 async function findOrCreateActiveSession(userId, currentStepKey = null, t = null) {
-  if (t) {
-    // Lock the user row as a per-user mutex
-    await User.findByPk(userId, { transaction: t, lock: Transaction.LOCK.UPDATE });
-  }
 
-  let session = await OnboardingSession.findOne({
+  //change for guest user(fix) - allow userId to be null
+if (userId && t) {
+  // Nếu có userId (login), lock user row để concurrency-safe
+  await User.findByPk(userId, { transaction: t, lock: Transaction.LOCK.UPDATE });
+}
+
+let session;
+if (userId) {
+  // Case: logged-in user
+  session = await OnboardingSession.findOne({
     where: { user_id: userId, is_completed: false },
     order: [["created_at", "DESC"]],
     ...(t ? { transaction: t, lock: Transaction.LOCK.UPDATE } : {}),
   });
+} else {
+  // Case: guest (user_id = null)
+  session = await OnboardingSession.findOne({
+    where: { user_id: null, is_completed: false },
+    order: [["created_at", "DESC"]],
+    ...(t ? { transaction: t, lock: Transaction.LOCK.UPDATE } : {}),
+  });
+}
 
-  if (!session) {
-    session = await OnboardingSession.create(
-      { user_id: userId, current_step_key: currentStepKey || null },
-      t ? { transaction: t } : {}
-    );
-  }
-  return session;
+if (!session) {
+  session = await OnboardingSession.create(
+    { user_id: userId || null, current_step_key: currentStepKey || null },
+    t ? { transaction: t } : {}
+  );
+}
+
+return session;
 }
 
 /* =========================
@@ -250,22 +264,28 @@ export async function saveAnswer(req, res) {
 export async function getSessionStatus(req, res) {
   try {
     const userId = req.userId;
-    const user = await User.findByPk(userId);
-
-    const onboarded = !!(user?.onboarding_completed_at || user?.onboardingCompletedAt);
-    if (onboarded) {
-      return res.json({
-        success: true,
-        data: {
-          required: false,
-          completed: true,
-          complete: true,
-          sessionId: null,
-          currentStepKey: null,
-          nextStepKey: null,
-          completedAt: user.onboarding_completed_at || user.onboardingCompletedAt,
-        },
-      });
+    
+    // For guest users (userId = null), skip user check
+    let user = null;
+    let onboarded = false;
+    
+    if (userId) {
+      user = await User.findByPk(userId);
+      onboarded = !!(user?.onboarding_completed_at || user?.onboardingCompletedAt);
+      if (onboarded) {
+        return res.json({
+          success: true,
+          data: {
+            required: false,
+            completed: true,
+            complete: true,
+            sessionId: null,
+            currentStepKey: null,
+            nextStepKey: null,
+            completedAt: user.onboarding_completed_at || user.onboardingCompletedAt,
+          },
+        });
+      }
     }
 
     // Tìm (hoặc tạo) session active
@@ -309,10 +329,13 @@ export async function getSessionStatus(req, res) {
         });
       }
 
-      // Chưa có → tạo mới một cách an toàn (khóa theo user để tránh tạo trùng)
+      // Chưa có → tạo mới một cách an toàn
       await sequelize.transaction(async (t) => {
-        // per-user mutex
-        await User.findByPk(userId, { transaction: t, lock: Transaction.LOCK.UPDATE });
+        if (userId) {
+          // For logged-in users: per-user mutex
+          await User.findByPk(userId, { transaction: t, lock: Transaction.LOCK.UPDATE });
+        }
+        
         const existing = await OnboardingSession.findOne({
           where: { user_id: userId, is_completed: false },
           order: [["created_at", "DESC"]],
@@ -371,8 +394,8 @@ export async function getSessionStatus(req, res) {
       if (!session.is_completed || session.current_step_key !== null) {
         await session.update({ is_completed: true, completed_at: new Date(), current_step_key: null });
       }
-      // Đánh dấu user đã hoàn tất (nếu muốn đồng bộ tại đây)
-      if (!user?.onboarding_completed_at && !user?.onboardingCompletedAt) {
+      // Đánh dấu user đã hoàn tất (chỉ cho logged-in users)
+      if (userId && (!user?.onboarding_completed_at && !user?.onboardingCompletedAt)) {
         const u = await User.findByPk(userId);
         if (u) await u.update({ onboarding_completed_at: new Date() });
       }

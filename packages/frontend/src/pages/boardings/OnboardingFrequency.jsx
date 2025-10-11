@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../lib/api";
 import { useAuth } from "../../context/auth.context";
 import OnboardingProgress from "../../components/OnboardingProgress.jsx";
 import { submitOnboardingAnswer } from "../../lib/onboarding";
@@ -9,7 +8,7 @@ import { useOnboardingGuard } from "../../hooks/useOnboardingGuard";
 export default function OnboardingFrequency() {
     useOnboardingGuard("workout_frequency");
   const navigate = useNavigate();
-  const { refreshUser, markOnboarded } = useAuth();
+  const { user, guestSession, refreshUser, markOnboarded } = useAuth();
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -48,6 +47,8 @@ export default function OnboardingFrequency() {
        navigate,
        refreshUser,
       markOnboarded,
+      user,
+      guestSession,
      });
     } catch (e) {
       const status = e?.response?.status;

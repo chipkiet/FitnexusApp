@@ -8,7 +8,7 @@ export default function OnboardingBodyFat() {
   const [dangLuu, setDangLuu] = useState(false);
   const [loi, setLoi] = useState(null);
   const navigate = useNavigate();
-  const { refreshUser, markOnboarded } = useAuth();
+  const { user, guestSession, refreshUser, markOnboarded } = useAuth();
 
   // Khớp seed backend: VERY_LOW | LOW | NORMAL | HIGH
   const OPTIONS = [
@@ -24,9 +24,19 @@ export default function OnboardingBodyFat() {
     setDangLuu(true);
 
     try {
-      const res = await api.post("/api/onboarding/steps/level_body_fat/answer", {
-        answers: { body_fat_level: value },
-      });
+      // const res = await api.post("/api/onboarding/steps/level_body_fat/answer", {
+      //   answers: { body_fat_level: value },
+      // });
+
+      const payload = {
+  answers: { body_fat_level: value },
+};
+
+if (!user && guestSession) {
+  payload.session_id = guestSession;
+}
+
+const res = await api.post("/api/onboarding/steps/level_body_fat/answer", payload);
 
       const next = res?.data?.data?.nextStepKey;
       if (next) {

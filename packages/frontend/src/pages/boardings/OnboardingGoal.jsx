@@ -1,10 +1,10 @@
 // packages/frontend/src/pages/boarding/OnboardingGoal.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../lib/api";
 import { useAuth } from "../../context/auth.context";
 import OnboardingProgress from "../../components/OnboardingProgress.jsx";
 import { useOnboardingGuard } from "../../hooks/useOnboardingGuard";
+import { submitOnboardingAnswer } from "../../lib/onboarding";
 
 export default function OnboardingGoal() {
   // Ép route khớp bước đang dở
@@ -12,7 +12,7 @@ export default function OnboardingGoal() {
   const [dangLuu, setDangLuu] = useState(false);
   const [loi, setLoi] = useState(null);
   const navigate = useNavigate();
-  const { refreshUser, markOnboarded } = useAuth();
+  const { user, guestSession, refreshUser, markOnboarded } = useAuth();
 
   // Value phải khớp seed backend: LOSE_FAT | BUILD_MUSCLE | MAINTAIN
   const OPTIONS = [
@@ -27,19 +27,15 @@ export default function OnboardingGoal() {
     setLoi(null);
 
     try {
-      const res = await api.post("/api/onboarding/steps/goal/answer", {
+      await submitOnboardingAnswer({
+        stepKey: "goal",
         answers: { goal },
+        navigate,
+        refreshUser,
+        markOnboarded,
+        user,
+        guestSession,
       });
-
-      const data = res?.data?.data || {};
-      const next = data.nextStepKey;
-      const completed = !!(data.completed || data.complete || !next);
-
-      if (completed) {
-        navigate("/", { replace: true });
-      } else {
-        navigate(`/onboarding/${next}`, { replace: true });
-      }
     } catch (err) {
       const status = err?.response?.status;
       const msg =
@@ -47,8 +43,8 @@ export default function OnboardingGoal() {
         (status === 404
           ? "Chưa cấu hình bước onboarding (goal)."
           : status === 422
-          ? "Giá trị goal không hợp lệ. Hãy chọn lại."
-          : "Không thể lưu lựa chọn, vui lòng thử lại.");
+            ? "Giá trị goal không hợp lệ. Hãy chọn lại."
+            : "Không thể lưu lựa chọn, vui lòng thử lại.");
       setLoi(msg);
     } finally {
       setDangLuu(false);

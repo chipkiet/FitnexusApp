@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-// Accepts either Bearer JWT (like auth.guard) or Passport session (req.user)
+// Accepts either Bearer JWT (like auth.guard) or Passport session (req.user) or guest (null userId)
 export default function authOrSession(req, res, next) {
   try {
     const header = req.get("authorization") || req.get("Authorization") || "";
@@ -25,7 +25,10 @@ export default function authOrSession(req, res, next) {
       return next();
     }
 
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    // Guest user (no authentication) - allow with null userId
+    req.userId = null;
+    req.userRole = null;
+    return next();
   } catch (_err) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }

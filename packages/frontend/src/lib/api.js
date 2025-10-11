@@ -48,7 +48,7 @@ export const endpoints = {
   },
 };
 
-// Những endpoint đi “thẳng” (không ép refresh/redirect)
+// Những endpoint đi "thẳng" (không ép refresh/redirect)
 const PASS_THROUGH = [
   "/auth/me",
   "/auth/login",
@@ -56,6 +56,9 @@ const PASS_THROUGH = [
   "/auth/refresh",
   "/auth/google",
   "/auth/google/callback",
+  "/api/onboarding/session",   // cho guest gọi không cần token
+  "/api/onboarding/steps",
+  "/api/onboarding/steps/",    // cho guest gọi answer endpoints
 ];
 
 const isPassThroughUrl = (u) => PASS_THROUGH.some((p) => (u || "").includes(p));

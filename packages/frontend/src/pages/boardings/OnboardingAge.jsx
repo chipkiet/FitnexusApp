@@ -41,10 +41,26 @@ export default function OnboardingAge() {
     setLoi(null);
     setDangLuu(true);
     try {
-      await api.post("/api/onboarding/steps/age/answer", {
+      const response = await api.post("/api/onboarding/steps/age/answer", {
         answers: { age_group: ageGroup, marketing: nhanMarketing },
       });
-      // ➜ bước 2 (code cũ)
+      
+      const data = response?.data?.data;
+      
+      // Nếu hoàn thành onboarding
+      if (data?.completed || data?.complete) {
+        markOnboarded();
+        navigate(returnTo, { replace: true });
+        return;
+      }
+      
+      // Nếu có bước tiếp theo
+      if (data?.nextStepKey) {
+        navigate(`/onboarding/${data.nextStepKey}`, { replace: true });
+        return;
+      }
+      
+      // Fallback: chuyển đến body nếu không có thông tin
       navigate("/onboarding/body", { replace: true });
     } catch (err) {
       const status = err?.response?.status;
@@ -195,6 +211,3 @@ export default function OnboardingAge() {
     </div>
   );
 }
-
-
-

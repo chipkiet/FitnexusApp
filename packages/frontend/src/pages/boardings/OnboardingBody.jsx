@@ -9,7 +9,7 @@ export default function OnboardingBody() {
   const [dangLuu, setDangLuu] = useState(false);
   const [loi, setLoi] = useState(null);
   const navigate = useNavigate();
-  const { refreshUser, markOnboarded } = useAuth();
+  const { user, guestSession, refreshUser, markOnboarded } = useAuth();
 
   // Giá trị value phải khớp seed backend: SKINNY | NORMAL | OVERWEIGHT | MUSCULAR
   const OPTIONS = [
@@ -25,9 +25,19 @@ export default function OnboardingBody() {
     setDangLuu(true);
 
     try {
-      const res = await api.post("/api/onboarding/steps/body_type/answer", {
-        answers: { body_type: bodyType },
-      });
+      // const res = await api.post("/api/onboarding/steps/body_type/answer", {
+      //   answers: { body_type: bodyType },
+      // });
+      const payload = {
+  answers: { body_type: bodyType },
+};
+
+// Nếu guest thì kèm session_id
+if (!user && guestSession) {
+  payload.session_id = guestSession;
+}
+
+const res = await api.post("/api/onboarding/steps/body_type/answer", payload);
 
       // ✅ Điều hướng theo phản hồi từ BE
       const data = res?.data?.data || {};

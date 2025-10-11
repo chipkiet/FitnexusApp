@@ -12,8 +12,7 @@ export default function OnboardingExperience() {
   const [dangLuu, setDangLuu] = useState(false);
   const [loi, setLoi] = useState(null);
   const navigate = useNavigate();
-  const { refreshUser, markOnboarded } = useAuth();
-
+  const { user, guestSession, refreshUser, markOnboarded } = useAuth();
   // Khớp seed backend: BEGINNER | INTERMEDIATE | ADVANCED
   const OPTIONS = [
     { label: "Mới bắt đầu", value: "BEGINNER", desc: "Chưa tập hoặc mới làm quen" },
@@ -47,6 +46,8 @@ export default function OnboardingExperience() {
        navigate,
        refreshUser,
        markOnboarded,
+       user,
+       guestSession,
     });
     } catch (err) {
       const status = err?.response?.status;

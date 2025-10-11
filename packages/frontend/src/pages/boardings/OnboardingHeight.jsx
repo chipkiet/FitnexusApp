@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../lib/api";
+import { submitOnboardingAnswer } from "../../lib/onboarding";
+import { useAuth } from "../../context/auth.context";
 import OnboardingProgress from "../../components/OnboardingProgress.jsx";
 import { useOnboardingGuard } from "../../hooks/useOnboardingGuard";
 
@@ -47,17 +48,15 @@ export default function OnboardingHeight() {
     setErr(null);
     setSaving(true);
     try {
-      const res = await api.post("/api/onboarding/steps/height/answer", {
+      await submitOnboardingAnswer({
+        stepKey: "height",
         answers: { height_cm: parsed },
+        navigate,
+        refreshUser,
+        markOnboarded,
+        user,
+        guestSession,
       });
-      const data = res?.data?.data || {};
-      const next = data.nextStepKey;
-      const completed = !!(data.completed || data.complete || !next);
-      if (completed) {
-        navigate("/", { replace: true });
-      } else {
-        navigate(`/onboarding/${next}`, { replace: true });
-      }
     } catch (e) {
       const status = e?.response?.status;
       const msg =
@@ -65,8 +64,8 @@ export default function OnboardingHeight() {
         (status === 404
           ? "Chưa cấu hình bước onboarding (height)."
           : status === 422
-          ? "Giá trị chiều cao không hợp lệ. Hãy nhập lại."
-          : "Không thể lưu lựa chọn, vui lòng thử lại.");
+            ? "Giá trị chiều cao không hợp lệ. Hãy nhập lại."
+            : "Không thể lưu lựa chọn, vui lòng thử lại.");
       setErr(msg);
     } finally {
       setSaving(false);

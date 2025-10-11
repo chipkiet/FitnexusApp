@@ -29,9 +29,9 @@ export default function OnboardingGate({ children }) {
         const step = String(d.nextStepKey || d.currentStepKey || "").toLowerCase();
         navigate(`/onboarding/${step || "age"}`, { replace: true });
       } catch (e) {
-        // Chưa đăng nhập → đưa về /login (tuỳ policy)
+        // Nếu chưa đăng nhập (guest) → vẫn cho đi onboarding
         if (e?.response?.status === 401) {
-          navigate("/login", { replace: true, state: { from: location } });
+          setReady(true);
           return;
         }
         // Lỗi khác: không chặn UI

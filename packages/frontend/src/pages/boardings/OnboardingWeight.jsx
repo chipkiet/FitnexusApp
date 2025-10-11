@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../lib/api";
+import { useAuth } from "../../context/auth.context";
+import { submitOnboardingAnswer } from "../../lib/onboarding";
 import OnboardingProgress from "../../components/OnboardingProgress.jsx";
 import { useOnboardingGuard } from "../../hooks/useOnboardingGuard";
 
@@ -11,6 +12,7 @@ export default function OnboardingWeight() {
   const [kg, setKg] = useState("");         // lưu raw text để người dùng nhập
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
+  const { user, guestSession, refreshUser, markOnboarded } = useAuth();
 
   // min/max/step giống seed backend
   const MIN = 30;
@@ -44,17 +46,15 @@ export default function OnboardingWeight() {
     setErr(null);
     setSaving(true);
     try {
-      const res = await api.post("/api/onboarding/steps/weight/answer", {
-        answers: { weight_kg: parsed },
-      });
-      const data = res?.data?.data || {};
-      const next = data.nextStepKey;
-      const completed = !!(data.completed || data.complete || !next);
-      if (completed) {
-        navigate("/", { replace: true });
-      } else {
-        navigate(`/onboarding/${next}`, { replace: true });
-      }
+      await submitOnboardingAnswer({
+  stepKey: "weight",
+  answers: { weight_kg: parsed },
+  navigate,
+  refreshUser,
+  markOnboarded,
+  user,
+  guestSession,
+});
     } catch (e) {
       const status = e?.response?.status;
       const msg =

@@ -4,7 +4,7 @@ import { useAuth } from "../../context/auth.context.jsx";
 import api from "../../lib/api";
 
 export default function PrivateRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, guestSession, initGuestOnboarding } = useAuth();
   const location = useLocation();
   const [checked, setChecked] = React.useState(false);
   const [redirectTo, setRedirectTo] = React.useState(null);
@@ -13,7 +13,11 @@ export default function PrivateRoute({ children }) {
     let mounted = true;
     (async () => {
       if (loading) return;
-      if (!user) { setChecked(true); return; }
+      if (!user) { 
+        // guest thì không cần check onboarding session bằng user_id
+        setChecked(true); 
+        return; 
+      }
 
       try {
         const r = await api.get("/api/onboarding/session", {
@@ -35,7 +39,15 @@ export default function PrivateRoute({ children }) {
   }, [user, loading]);
 
   if (loading || !checked) return <div className="h-screen flex items-center justify-center">Loading...</div>;
-  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
+
+  if (!user) {
+    if (guestSession) {
+      return children; // guest có session → cho phép vào
+    }
+    initGuestOnboarding(); // tạo mới session cho guest
+    return <div className="h-screen flex items-center justify-center">Loading...</div>;
+  }
+
   if (redirectTo) return <Navigate to={redirectTo} replace state={{ from: location }} />;
   return children;
 }

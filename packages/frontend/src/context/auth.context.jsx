@@ -20,6 +20,10 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Guest session (ẩn danh)
+const [guestSession, setGuestSession] = useState(
+  () => localStorage.getItem("guest_onboarding_session") || null
+);
 
   // Đánh dấu đã hoàn tất onboarding (update cục bộ state)
   const markOnboarded = () => {
@@ -114,6 +118,24 @@ export function AuthProvider({ children }) {
       return false;
     }
   };
+
+/**
+ * Khởi tạo guest onboarding session (cho user chưa login)
+ */
+const initGuestOnboarding = async () => {
+  try {
+    const r = await api.post(endpoints.onboarding.session);
+    const d = r?.data?.data || r?.data;
+    if (d?.session_id) {
+      localStorage.setItem("guest_onboarding_session", d.session_id);
+      setGuestSession(d.session_id);
+    }
+    return d;
+  } catch (err) {
+    console.error("initGuestOnboarding error:", err);
+    return null;
+  }
+};
 
   /**
    * Bootstrap: load user khi mở app.
@@ -283,13 +305,16 @@ export function AuthProvider({ children }) {
       oauthLogin,
       refreshUser,
       redirectAfterAuth,
+      // guest support
+      guestSession,
+      initGuestOnboarding,
       // helpers
       markOnboarded,
       isAuthenticated,
       getAuthStatus,
       clearError: () => setError(null),
     }),
-    [user, loading, error]
+    [user, guestSession, loading, error]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

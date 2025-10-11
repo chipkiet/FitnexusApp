@@ -1,5 +1,7 @@
 import React, { useState, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/auth.context";
+import { api } from "../../lib/api";
 import {
   Activity,
   Zap,
@@ -15,7 +17,37 @@ import { Bounds, OrbitControls } from "@react-three/drei";
 
 const Fitnexus3DLanding = () => {
   const navigate = useNavigate();
+  const { initGuestOnboarding } = useAuth();
   const [hoveredPart, setHoveredPart] = useState(null);
+
+  const handleStartOnboarding = async () => {
+    try {
+      // Khởi tạo guest session nếu chưa có
+      await initGuestOnboarding();
+      
+      // Kiểm tra trạng thái onboarding hiện tại
+      const response = await api.get("/api/onboarding/session", {
+        params: { t: Date.now() },
+        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+        withCredentials: true,
+      });
+
+      const data = response?.data?.data || {};
+      
+      if (data.required && !data.completed) {
+        // Chuyển đến bước tiếp theo hoặc bước đang dở
+        const nextStep = String(data.nextStepKey || data.currentStepKey || "age").toLowerCase();
+        navigate(`/onboarding/${nextStep}`);
+      } else {
+        // Nếu đã hoàn thành, chuyển đến trang chính
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error starting onboarding:", error);
+      // Fallback to first step if error occurs
+      navigate("/onboarding/age");
+    }
+  };
 
   const bodyParts = [
     {
@@ -125,7 +157,10 @@ const Fitnexus3DLanding = () => {
             <p className="max-w-3xl mx-auto mb-12 text-xl text-gray-300 md:text-2xl">
               Fitnexus kết hợp sức mạnh của AI và chuyên môn của các nhà khoa học thể thao để tạo ra kế hoạch luyện tập tốt nhất cho bạn.
             </p>
-            <button className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold text-black transition bg-white rounded-full hover:bg-gray-200 group">
+            <button 
+              onClick={handleStartOnboarding}
+              className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold text-black transition bg-white rounded-full hover:bg-gray-200 group"
+            >
               Nhận kế hoạch luyện tập cá nhân hóa
               <ChevronRight className="transition-transform group-hover:translate-x-1" size={24} />
             </button>
@@ -411,7 +446,10 @@ const Fitnexus3DLanding = () => {
           <p className="mb-12 text-2xl text-gray-400">
             Tham gia cùng hàng nghìn người đang thay đổi cuộc sống
           </p>
-          <button className="inline-flex items-center gap-3 px-12 py-6 text-xl font-semibold text-black transition bg-white rounded-full hover:bg-gray-200">
+          <button 
+            onClick={() => navigate("/onboarding")}
+            className="inline-flex items-center gap-3 px-12 py-6 text-xl font-semibold text-black transition bg-white rounded-full hover:bg-gray-200"
+          >
             Nhận kế hoạch miễn phí
             <ChevronRight size={28} />
           </button>
