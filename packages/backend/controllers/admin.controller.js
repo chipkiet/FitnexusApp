@@ -106,6 +106,7 @@ export async function unlockUser(req, res) {
  * Trả về trạng thái hiển thị theo hoạt động gần nhất:
  * - ACTIVE: lastActiveAt trong cửa sổ ACTIVE_WINDOW_MS (mặc định 5 phút)
  * - INACTIVE: ngược lại
+
  */
 export async function listUsers(req, res) {
   try {
@@ -192,9 +193,7 @@ export async function listUsers(req, res) {
   }
 }
 
-/**
- * PATCH /api/admin/users/:id/role
- */
+
 export async function updateUserRole(req, res) {
   try {
     const userId = req.params.id;
@@ -223,9 +222,7 @@ export async function updateUserRole(req, res) {
   }
 }
 
-/**
- * PATCH /api/admin/users/:id/plan
- */
+
 export async function updateUserPlan(req, res) {
   try {
     const userId = req.params.id;
@@ -254,9 +251,7 @@ export async function updateUserPlan(req, res) {
   }
 }
 
-/**
- * POST /api/admin/users/:userId/reset-password
- */
+
 export async function resetPassword(req, res) {
   try {
     const { userId } = req.params;
@@ -284,6 +279,7 @@ export async function resetPassword(req, res) {
         success: false,
         message:
           "Password too weak (min 8, cần chữ hoa, chữ thường, số, ký tự đặc biệt)",
+
       });
     }
 
@@ -293,6 +289,7 @@ export async function resetPassword(req, res) {
         transaction: t,
         lock: t.LOCK.UPDATE,
       });
+
       if (!user) return { ok: false, message: "User not found" };
 
       user.set("passwordHash", newPassword);
@@ -306,6 +303,7 @@ export async function resetPassword(req, res) {
           expires_at: sequelize.fn("NOW"),
           used_at: sequelize.fn("NOW"),
           created_at: sequelize.fn("NOW"),
+
         },
         { transaction: t }
       );

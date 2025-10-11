@@ -26,6 +26,7 @@ const router = express.Router();
 router.patch('/users/:id/lock',   authGuard, requireAdmin, lockUser);
 router.patch('/users/:id/unlock', authGuard, requireAdmin, unlockUser);
 
+
 /** GET /api/admin/health - ADMIN only */
 router.get('/health', authGuard, requireAdmin, (_req, res) => {
   res.json({ success: true, message: 'Admin route OK', timestamp: new Date().toISOString() });
@@ -175,5 +176,6 @@ router.post(
     return createSubAdmin(req, res, next);
   }
 );
+
 
 export default router;
