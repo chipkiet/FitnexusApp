@@ -22,6 +22,7 @@ import Plan from "./pages/admin/Plan.jsx";
 import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
+import TrainerManage from "./pages/admin/TrainerManage.jsx";
 
 // Onboarding pages (multi-step)
 import OnboardingEntry from "./pages/boardings/OnboardingEntry.jsx";
@@ -53,7 +54,6 @@ function AdminRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -62,7 +62,6 @@ function AdminRoute({ children }) {
   }
   return user.role === "ADMIN" ? children : <Navigate to="/" replace />;
 }
-
 
 function App() {
   useEffect(() => {
@@ -73,7 +72,6 @@ function App() {
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, []);
-
 
   return (
     <AuthProvider>
@@ -102,10 +100,9 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-code" element={<VerifyCode />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/landing-model" element={<LandingModel/>} />
+          <Route path="/landing-model" element={<LandingModel />} />
 
-
-          <Route path="/" element={<Landing/>} />
+          <Route path="/" element={<Landing />} />
 
           {/* Main app routes */}
           <Route
@@ -117,8 +114,6 @@ function App() {
             }
           />
 
-
-
           {/* Admin */}
           <Route
             path="/admin"
@@ -129,6 +124,7 @@ function App() {
             }
           >
             <Route index element={<AdminOverview />} />
+            <Route path="trainer" element={<TrainerManage />} /> {/* <-- Trang Trainer */}
             <Route path="user-detail" element={<AdminUserDetail />} />
             <Route path="role" element={<Role />} />
             <Route path="plan" element={<Plan />} />
@@ -136,10 +132,8 @@ function App() {
             <Route path="reset-password" element={<AdminResetPassword />} />
             <Route path="content" element={<AdminContentManage />} />
             <Route path="finance" element={<AdminFinancialManage />} />
-            {/* Thêm route này nếu bạn dùng trang AdminUsers */}
             <Route path="users" element={<AdminUsers />} />
           </Route>
-
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -148,6 +142,5 @@ function App() {
     </AuthProvider>
   );
 }
-
 
 export default App;

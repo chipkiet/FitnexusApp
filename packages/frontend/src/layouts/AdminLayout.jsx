@@ -73,7 +73,7 @@ export default function AdminLayout() {
         key: "trainer",
         icon: Dumbbell,
         label: "Trainer Manage",
-        children: [{ label: "Overview", to: "/admin/trainers" }],
+        children: [{ label: "Overview", to: "/admin/trainer" }],
       },
       {
         key: "financial",
