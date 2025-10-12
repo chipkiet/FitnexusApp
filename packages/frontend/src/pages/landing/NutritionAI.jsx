@@ -60,9 +60,39 @@ export default function FoodCalorie() {
   useEffect(() => {
     (async () => {
       try {
-        await tf.setBackend('webgl');
+        // Try WebGL, then gracefully fall back to CPU if unavailable
+        try {
+          await tf.setBackend('webgl');
+        } catch (_) {
+          await tf.setBackend('cpu');
+        }
         await tf.ready();
-        const net = await mobilenet.load({ version: 2, alpha: 1.0 });
+
+        // Prefer loading a local MobileNetV2 if present, else fall back to remote
+        const tryLocalMobileNet = async () => {
+          const candidates = [
+            // Plain folders (tfjs-models layout)
+            '/model/mobilenet/model.json',
+            '/model/mobilenet_v2/model.json',
+            '/model/mobilenet_v2_1.0_224/model.json',
+            '/model/mobilenet_v2_100_224/model.json',
+            // TFHub-style layout (your link usually expands to this)
+            '/model/mobilenet_v2_1.0_224/classification/2/model.json',
+            '/model/mobilenet_v2_100_224/classification/2/model.json',
+          ];
+          for (const url of candidates) {
+            try {
+              const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+              if (res.ok) {
+                return await mobilenet.load({ version: 2, alpha: 1.0, modelUrl: url });
+              }
+            } catch(_) { /* try next */ }
+          }
+          // Fallback to remote CDN (requires network)
+          return await mobilenet.load({ version: 2, alpha: 1.0 });
+        };
+
+        const net = await tryLocalMobileNet();
         const clf = await tf.loadLayersModel('/model/classifier/model.json');
         const lbs = await (await fetch('/model/labels.json')).json();
         const cal = await (await fetch('/tables/calorie_table.json')).json();
@@ -83,7 +113,7 @@ export default function FoodCalorie() {
         console.log('Loaded. output=', clf.outputs[0].shape, 'labels=', lbs.length);
       } catch (e) {
         console.error(e);
-        setError('Không thể tải mô hình/dữ liệu. Hãy kiểm tra các tệp trong thư mục public/model và public/tables.');
+        setError('Không thể tải mô hình/dữ liệu. Nếu môi trường chặn internet, hãy thêm MobileNetV2 vào /public/model/mobilenet và kiểm tra các tệp trong /public/model và /public/tables.');
         setReady(false);
       }
     })();
@@ -284,6 +314,7 @@ export default function FoodCalorie() {
   }
 
   return (
+<html style={{backgroundColor: '#0a1320'}}>
     <div className="fc-page">
       {/* Hidden global file input so both hero and scanner can trigger it */}
       <input
@@ -535,5 +566,6 @@ export default function FoodCalorie() {
         </div>
       </section>
     </div>
+    </html>
   );
 }

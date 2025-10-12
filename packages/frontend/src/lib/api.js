@@ -61,6 +61,7 @@ const PASS_THROUGH = [
   "/auth/refresh",
   "/auth/google",
   "/auth/google/callback",
+  "/api/nutrition/plan",
 ];
 
 const isPassThroughUrl = (u) => PASS_THROUGH.some((p) => (u || "").includes(p));

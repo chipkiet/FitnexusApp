@@ -8,7 +8,83 @@ const dbg = (...args) => { if (GDEBUG) console.log('[GEMINI]', ...args); };
 function isNutritionRelated(text = '') {
   const s = String(text || '').toLowerCase();
   if (!s.trim()) return true;
-  const allow = ['ăn','an ','dinh dưỡng','dinh duong','calo','kcal','protein','carb','fat','lipid','bữa','khẩu phần','giảm cân','tăng cân','giữ cân','giảm mỡ','tăng cơ','macro','meal','diet','nutrition','calorie','plan','thực đơn','ăn kiêng','keto','low carb','high protein','bữa sáng','bữa trưa','bữa tối','snack'];
+const allow = [
+  // --- GỐC BẠN CÓ ---
+  'ăn','dinh dưỡng','calo','kcal','protein','carb','fat','lipid','bữa','khẩu phần',
+  'giảm cân','tăng cân','giữ cân','giảm mỡ','tăng cơ','macro','meal','diet','nutrition','plan',
+  'thực đơn','ăn kiêng','keto','low carb','high protein','bữa sáng','bữa trưa','bữa tối','snack',
+  'thức ăn','thực phẩm','healthy','eat clean','organic','vitamin','khoáng chất',
+  'fitness','gym','body fat','bmi','bmr','tdee',
+  'detox','plant-based','vegan','vegetarian','gluten-free','dairy-free',
+  'dị ứng','di ung','intolerance','đường huyết','tiểu đường','tim mạch','cholesterol cao',
+  'tính calo','phân tích dinh dưỡng','ai dinh dưỡng','tư vấn dinh dưỡng','meal recommendation',
+
+  // --- MỞ RỘNG MACRO/MICRO/CHỈ SỐ ---
+  'đạm','tinh bột','chất béo','chất xơ','đường','đường added','đường tự nhiên',
+  'omega-3','omega 3','omega-6','omega 6','cholesterol','hdl','ldl','triglyceride',
+  'glycemic index','gi','glycemic load','gl','satiety index','mật độ năng lượng','caloric density',
+  'micronutrient','micros','macros','macro split','p:c:f','tỉ lệ p c f','tỷ lệ p c f',
+
+  // --- VITAMIN/KHOÁNG ---
+  'vitamin a','vitamin b','vitamin c','vitamin d','vitamin e','vitamin k',
+  'canxi','calcium','sắt','iron','kẽm','zinc','magie','magnesium','iod','iodine','folate','axit folic',
+
+  // --- ĐO LƯỜNG/ĐƠN VỊ ---
+  'calories','calorie','maintenance calories','calorie deficit','calorie surplus',
+  'ước tính calo','đếm calo','tính macro','macro calculator','calorie calculator',
+  'serving','servings','serving size','portion','portion size','khẩu phần ăn','suất',
+  'per 100g','trên 100g','100g',
+  'g/kg','gram per kg','grams per kg','protein per kg',
+
+  // --- CHẾ ĐỘ ĂN/Diets ---
+  'low fat','ít béo','low sugar','ít đường','ít muối','không đường',
+  'paleo','mediterranean','địa trung hải','dash','whole30','carnivore',
+  'lactose-free','không lactose','casein-free','soy-free','không đậu nành',
+  'intermittent fasting','if','nhịn ăn gián đoạn','omad','5:2','16:8','18:6','20:4','eat stop eat','alternate day fasting',
+  'clean eating','meal plan','meal planner','mealplan','meal-prep','meal prep','meal prepping',
+
+  // --- BỐI CẢNH BỮA ĂN/TẬP LUYỆN ---
+  'ăn nhẹ','ăn vặt','pre-workout','post-workout','trước khi tập','sau khi tập',
+  'nạp carb','carb cycling','chu kỳ carb','refeed','cheat day','cheat meal',
+  'bulk','bulking','cut','cutting','recomp','lean bulk','dirty bulk','reverse diet',
+
+  // --- THỨC UỐNG/HYDRATION ---
+  'hydration','uống nước','nước lọc','nước tăng lực','energy drink','isotonic','electrolyte','bù điện giải',
+  'nước ngọt','đồ uống có đường','soda',
+
+  // --- TÌNH TRẠNG SỨC KHỎE ---
+  'tiểu đường tuýp 2','tiểu đường tuýp 1','hạ đường huyết','mỡ máu','gan nhiễm mỡ',
+  'gout','dạ dày','viêm dạ dày','trào ngược','pcos','hội chứng buồng trứng đa nang',
+  'cường giáp','suy giáp','tuyến giáp','huyết áp cao','béo phì',
+
+  // --- DỊ ỨNG/LOẠI TRỪ ---
+  'dị ứng sữa','dị ứng đậu phộng','dị ứng lạc','peanut allergy','tree nut','hạt cây',
+  'hải sản','shellfish','tôm','cua','nhuyễn thể','gluten','lactose','casein','đậu nành','trứng','wheat','mè','sesame',
+
+  // --- NHÃN DINH DƯỠNG/FACTS ---
+  'nutrition facts','nhãn dinh dưỡng','bảng dinh dưỡng','thành phần dinh dưỡng','nutrition label',
+
+  // --- THỰC PHẨM “CƠ BẢN” HAY HỎI CALO ---
+  'trứng','lòng trắng trứng','yogurt','sữa chua','sữa tách béo','sữa ít béo',
+  'ức gà','chicken breast','thịt bò nạc','lean beef','cá hồi','salmon','cá ngừ','tuna','tôm','shrimp',
+  'yến mạch','oat','oats','oatmeal','gạo lứt','brown rice','khoai lang','sweet potato','bánh mì','bread',
+  'đậu hũ','tofu','tempeh','đậu xanh','đậu đỏ','đậu đen','hạt chia','chia seed','yến mạch qua đêm','overnight oats',
+
+  // --- CÁCH CHẾ BIẾN (ảnh hưởng chỉ số) ---
+  'hấp','luộc','nướng','chiên','rán','áp chảo','airfryer','nồi chiên không dầu','xào',
+
+  // --- THỰC PHẨM BỔ SUNG/SUPPS ---
+  'whey','casein','protein powder','mass gainer','bcaa','eaa','creatine','fish oil','omega 3','multivitamin','collagen',
+  'preworkout','caffeine','beta alanine','l-carnitine','green tea extract','electrolyte powder',
+
+  // --- PHƯƠNG PHÁP TÍNH/CT ---
+  'harris-benedict','mifflin st jeor','mifflin-st jeor','mifflin-st-jeor','lean body mass','lbm',
+
+  // --- CÂU HỎI MẪU HAY GÕ ---
+  'bao nhiêu calo','bao nhieu calo','calo của','calo cua','nhiệt lượng','nang luong',
+  'ăn bao nhiêu','an bao nhieu','ăn mấy bữa','an may bua','gợi ý khẩu phần','goi y khau phan',
+  'thực đơn 7 ngày','thực đơn 1 tuần','thuc don 7 ngay','thuc don 1 tuan'
+];
   return allow.some(k => s.includes(k));
 }
 
@@ -87,10 +163,10 @@ router.post('/plan', async (req, res) => {
       dbg('off-topic blocked', { goal: goalRaw, extraLen: extra.length });
       return res.status(400).json({ success: false, offTopic: true, message: 'Tôi chỉ được thiết kế để lên kế hoạch dinh dưỡng' });
     }
-    const systemGuard = 'Bạn là trợ lý dinh dưỡng. Chỉ trả lời về kế hoạch ăn uống, gợi ý bữa ăn, macro\nNếu câu hỏi không liên quan đến dinh dưỡng, hãy trả lời đúng 1 câu: "Tôi chỉ được thiết kế để lên kế hoạch dinh dưỡng".';
-    const goalText = goal === 'LOSE_WEIGHT' ? 'Giảm cân' : goal === 'GAIN_WEIGHT' ? 'Tăng cân' : 'Giữ cân/balanced';
-    const userPrompt = `Mục tiêu: ${goalText}.\nThông tin bổ sung: ${extra || '(không có)'}.\nHãy gợi ý thực đơn 3-4 bữa/ngày trong 3 ngày, kèm macro ước tính, tổng kcal/ngày gợi ý theo mục tiêu.`;
-    const prompt = `${systemGuard}\n\n${userPrompt}`;
+    // Prompt theo format yêu cầu: "Mục tiêu: <tăng cân|giảm cân|giữ cân đối> + thông tin bổ sung (nếu có)"
+    const goalText = goal === 'LOSE_WEIGHT' ? 'giảm cân' : goal === 'GAIN_WEIGHT' ? 'tăng cân' : 'giữ cân đối';
+    const prompt = `Mục tiêu: ${goalText}${extra ? ` + ${extra}` : ''}`;
+    dbg('prompt', { text: prompt });
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
     dbg('incoming', { goal: goalRaw, extraLen: extra.length, model: process.env.GEMINI_MODEL || 'gemini-2.0-flash', apiKeySet: !!apiKey });
     const resp = await callGemini(prompt, apiKey);

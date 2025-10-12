@@ -28,6 +28,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.23.0",
+    "@tensorflow-models/mobilenet": "^2.1.1",
+    "@tensorflow/tfjs": "^4.22.0",
     "ioredis": "^5.8.0",
     "lucide-react": "^0.544.0"
   }
