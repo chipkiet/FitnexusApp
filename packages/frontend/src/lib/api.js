@@ -1,3 +1,4 @@
+// packages/frontend/src/lib/api.js
 import axios from "axios";
 import {
   getToken,
@@ -50,21 +51,38 @@ export const endpoints = {
     users: "/api/admin/users",
     userRole: (id) => `/api/admin/users/${id}/role`,
     userPlan: (id) => `/api/admin/users/${id}/plan`,
+    userLock: (id) => `/api/admin/users/${id}/lock`,
+    userUnlock: (id) => `/api/admin/users/${id}/unlock`,
+
+    // ⬇️ NEW: sub-admin endpoints
+    listSubAdmins: "/api/admin/subadmins",
+    createSubAdmin: "/api/admin/subadmins",
   },
 };
 
 // Những endpoint đi “thẳng” (không ép refresh/redirect)
+// ✅ Bổ sung đầy đủ /api/auth/* để tránh redirect khi đang ở màn login / refresh fail
 const PASS_THROUGH = [
-  "/auth/me",
-  "/auth/login",
-  "/auth/register",
-  "/auth/refresh",
-  "/auth/google",
+  // API auth
+  endpoints.auth.me,
+  endpoints.auth.login,
+  endpoints.auth.register,
+  endpoints.auth.refresh,
+  endpoints.auth.checkUsername,
+  endpoints.auth.checkEmail,
+  endpoints.auth.checkPhone,
+  endpoints.auth.forgot,
+
+  // OAuth session endpoints
+  endpoints.oauth.me,
+  endpoints.oauth.google,
+
+  // Passport callback (nếu dùng)
   "/auth/google/callback",
   "/api/nutrition/plan",
 ];
 
-const isPassThroughUrl = (u) => PASS_THROUGH.some((p) => (u || "").includes(p));
+const isPassThroughUrl = (u = "") => PASS_THROUGH.some((p) => u.startsWith(p));
 
 let isRefreshing = false;
 let failedQueue = [];
@@ -102,8 +120,7 @@ api.interceptors.request.use(
               { refreshToken },
               { headers: { "Content-Type": "application/json" }, withCredentials: true }
             );
-            const { token: newAccessToken, refreshToken: newRefreshToken } =
-              response.data.data;
+            const { token: newAccessToken, refreshToken: newRefreshToken } = response.data.data;
 
             setTokens(newAccessToken, newRefreshToken, true);
             config.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -154,13 +171,23 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config || {};
     const url = originalRequest.url || "";
+    const status = error?.response?.status;
 
-    // 401 từ pass-through (vd /auth/me khi chưa login) -> không redirect
-    if (error?.response?.status === 401 && isPassThroughUrl(url)) {
+    // Nếu là pass-through (đặc biệt /api/auth/login, /api/auth/refresh), đừng redirect — để UI tự xử lý
+    if ((status === 401 || status === 423 || status === 403) && isPassThroughUrl(url)) {
       return Promise.reject(error);
     }
 
-    if (error?.response?.status === 401 && !originalRequest._retry) {
+    // Nếu gặp 423 (tài khoản bị khóa) ở API khác => đăng xuất và đưa về /login
+    if (status === 423) {
+      clearAllTokens();
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.replace("/login");
+      }
+      return Promise.reject(error);
+    }
+
+    if (status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -183,8 +210,7 @@ api.interceptors.response.use(
             { refreshToken },
             { headers: { "Content-Type": "application/json" }, withCredentials: true }
           );
-          const { token: newAccessToken, refreshToken: newRefreshToken } =
-            response.data.data;
+          const { token: newAccessToken, refreshToken: newRefreshToken } = response.data.data;
 
           setTokens(newAccessToken, newRefreshToken, true);
           processQueue(null, newAccessToken);
@@ -239,7 +265,7 @@ export const patchUserPlan = async (userId, plan) => {
   return res.data;
 };
 
-// ===== Admin APIs =====
+// ===== Admin Users =====
 export const getAdminUsers = async ({
   limit = 50,
   offset = 0,
@@ -252,6 +278,23 @@ export const getAdminUsers = async ({
   if (plan && plan !== "ALL") params.plan = String(plan).toUpperCase();
   if (role && role !== "ALL") params.role = String(role).toUpperCase();
   const res = await api.get(endpoints.admin.users, { params });
+  return res.data;
+};
+
+// ===== Sub-admin APIs =====
+export const getSubAdmins = async ({ limit = 50, offset = 0 } = {}) => {
+  const res = await api.get(endpoints.admin.listSubAdmins, {
+    params: { limit, offset },
+  });
+  return res.data;
+};
+
+export const createSubAdmin = async ({ email, username, password }) => {
+  const res = await api.post(endpoints.admin.createSubAdmin, {
+    email,
+    username,
+    password,
+  });
   return res.data;
 };
 

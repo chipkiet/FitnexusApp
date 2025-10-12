@@ -231,12 +231,11 @@ export function AuthProvider({ children }) {
       return response.data;
     } catch (err) {
       console.error("Login error:", err);
-      if (err.response?.status === 400)
-        setError({ message: "Dữ liệu không hợp lệ" });
-      else if (err.response?.status === 401)
-        setError({ message: "Sai tài khoản hoặc mật khẩu" });
-      else if (err.response?.status === 403)
-        setError({ message: "Tài khoản đã bị khóa" });
+      if (err.response?.status === 400) setError({ message: "Dữ liệu không hợp lệ" });
+      else if (err.response?.status === 401) setError({ message: "Sai tài khoản hoặc mật khẩu" });
+      else if (err.response?.status === 403) setError({ message: "Tài khoản đã bị khóa" });
+      else if (err.response?.status === 423) setError({ message: "Tài khoản đã bị khóa" });
+
       else setError(err?.response?.data || { message: err.message });
       throw err;
     } finally {

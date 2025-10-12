@@ -30,12 +30,10 @@ async function genUniqueUsername(base) {
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.Google_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
-      passReqToCallback: true,          // ✅ bật kèm verify 5 tham số
+clientID: process.env.GOOGLE_CLIENT_ID,
+clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+callbackURL: process.env.GOOGLE_CALLBACK_URL,
     },
-    // ⚠️ PHẢI có 'req' ở tham số đầu tiên
     async (req, accessToken, refreshToken, profile, done) => {
       try {
         const provider = "google";
@@ -71,14 +69,12 @@ passport.use(
           avatarUrl,
           provider,
           providerId,
-          // termsAcceptedAt: null,
-          // marketingOptIn: null,
         });
 
-        if (req?.session) req.session.justCreated = true; // dùng cho redirect /onboarding nếu cần
+        if (req?.session) req.session.justCreated = true;
         return done(null, user);
       } catch (err) {
-        return done(err, null);   // ✅ bây giờ 'done' là function
+        return done(err, null);
       }
     }
   )
