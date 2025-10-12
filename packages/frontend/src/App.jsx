@@ -11,9 +11,8 @@ import VerifyCode from "./pages/authentication/VerifyCode.jsx";
 import ResetPassword from "./pages/authentication/ResetPassword.jsx";
 import Landing from "./pages/landing/Landing.jsx";
 import Dashboard from "./pages/user/Dashboard.jsx";
-
-
-
+import ModelingPage from "./components/ModelingPage.jsx";
+import MainLayout from "./layouts/MainLayout.jsx";
 
 // Onboarding
 import OnboardingAge from "./pages/boardings/OnboardingAge.jsx";
@@ -106,15 +105,17 @@ function App() {
           {/* Public landing page at root shows Dashboard */}
           <Route path="/" element={<Landing />} />
 
-          {/* Authenticated dashboard */}
+          {/* Main layout with protected routes */}
           <Route
-            path="/dashboard"
             element={
               <PrivateRoute>
-                <Dashboard />
+                <MainLayout />
               </PrivateRoute>
             }
-          />
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/modeling" element={<ModelingPage />} />
+          </Route>
 
 
 

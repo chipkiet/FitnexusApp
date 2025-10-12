@@ -11,6 +11,7 @@ import session from 'express-session';
 import authRouter from './routes/auth.routes.js';
 import adminRouter from './routes/admin.routes.js';
 import trainerRouter from './routes/trainer.routes.js';
+import exerciseRouter from './routes/exercise.routes.js';
 
 // từ nhánh main
 import passport from './config/passport.js';
@@ -90,6 +91,7 @@ app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/trainer', trainerRouter);
 app.use('/api/onboarding', onboardingRouter);
+app.use('/api/exercises', exerciseRouter);
 
 
 // Google OAuth (session-based)
