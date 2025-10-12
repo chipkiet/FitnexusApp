@@ -5,6 +5,7 @@ import { getAdminUsers, patchUserPlan } from "../../lib/api.js";
 import { Pencil } from "lucide-react";
 
 const PLANS = ["FREE", "PREMIUM"];
+const ACTIVE_WINDOW_MIN = 5;
 
 export default function Plan() {
   const { user } = useAuth();
@@ -18,7 +19,6 @@ export default function Plan() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [editingId, setEditingId] = useState(null);
   const [savingId, setSavingId] = useState(null);
 
@@ -65,6 +65,35 @@ export default function Plan() {
     }
   };
 
+  const getActivityStatus = (u) => {
+    if (String(u.status || "").toUpperCase() === "BANNED") return "BANNED";
+    if (!u.lastActiveAt) return "INACTIVE";
+    const last = new Date(u.lastActiveAt);
+    const diffMin = (Date.now() - last.getTime()) / (1000 * 60);
+    return diffMin <= ACTIVE_WINDOW_MIN ? "ACTIVE" : "INACTIVE";
+  };
+
+  const StatusBadge = ({ user }) => {
+    const s = getActivityStatus(user);
+    const cls =
+      s === "ACTIVE"
+        ? "bg-green-100 text-green-800"
+        : s === "BANNED"
+        ? "bg-red-100 text-red-800"
+        : "bg-yellow-100 text-yellow-800";
+    const lastSeen = user.lastActiveAt
+      ? new Date(user.lastActiveAt).toLocaleString()
+      : "N/A";
+    return (
+      <span
+        title={`Last active: ${lastSeen}`}
+        className={`px-2 py-1 rounded-full text-xs font-medium ${cls}`}
+      >
+        {s}
+      </span>
+    );
+  };
+
   const page = Math.floor(offset / limit) + 1;
   const pages = Math.max(1, Math.ceil(total / limit));
 
@@ -75,7 +104,6 @@ export default function Plan() {
         Logged in as: {user?.username} ({user?.role})
       </div>
 
-      {/* Search box */}
       <form className="flex gap-2 mb-4" onSubmit={onSearch}>
         <input
           value={search}
@@ -88,11 +116,9 @@ export default function Plan() {
         </button>
       </form>
 
-      {error && <div className="mb-3 text-red-600 text-sm">{error.message || "Error"}</div>}
-
+      {error && <div className="mb-3 text-red-600 text-sm">{error.message}</div>}
       <div className="mb-3 text-sm text-gray-600">Total: {total}</div>
 
-      {/* Table */}
       <div className="overflow-x-auto border rounded">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50">
@@ -102,7 +128,7 @@ export default function Plan() {
               <th className="text-left p-2">Email</th>
               <th className="text-left p-2">Plan</th>
               <th className="text-left p-2">Status</th>
-              <th className="text-left p-2">Last Login</th>
+              <th className="text-left p-2">Last Active</th>
             </tr>
           </thead>
           <tbody>
@@ -116,8 +142,6 @@ export default function Plan() {
                   <td className="p-2">{u.user_id}</td>
                   <td className="p-2">{u.username}</td>
                   <td className="p-2">{u.email}</td>
-
-                  {/* Plan cell */}
                   <td className="p-2">
                     {editingId === u.user_id ? (
                       <div className="flex gap-2">
@@ -138,7 +162,7 @@ export default function Plan() {
                         <button
                           type="button"
                           onClick={() => setEditingId(null)}
-                          className="px-2 py-1 text-gray-500 hover:text-red-600"
+                          className="text-gray-400 hover:text-red-600"
                         >
                           ✕
                         </button>
@@ -147,57 +171,23 @@ export default function Plan() {
                       <div className="flex items-center gap-2">
                         <span>{u.plan}</span>
                         <button
-                          type="button"
                           onClick={() => setEditingId(u.user_id)}
                           className="text-gray-500 hover:text-blue-600"
-                          title="Edit plan"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                       </div>
                     )}
                   </td>
-
-                  <td className="p-2">{u.status}</td>
+                  <td className="p-2"><StatusBadge user={u} /></td>
                   <td className="p-2">
-                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "-"}
+                    {u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString() : "-"}
                   </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center gap-2 mt-3">
-        <button
-          className="px-3 py-1 border rounded disabled:opacity-50"
-          onClick={() => setOffset(Math.max(0, offset - limit))}
-          disabled={offset === 0}
-        >
-          Prev
-        </button>
-        <span className="text-sm">Page {page} / {pages}</span>
-        <button
-          className="px-3 py-1 border rounded disabled:opacity-50"
-          onClick={() => setOffset(offset + limit)}
-          disabled={offset + limit >= total}
-        >
-          Next
-        </button>
-        <select
-          className="ml-2 border rounded px-2 py-1"
-          value={limit}
-          onChange={(e) => {
-            setLimit(parseInt(e.target.value, 10));
-            setOffset(0);
-          }}
-        >
-          {[10, 20, 50, 100].map((n) => (
-            <option key={n} value={n}>{n}/page</option>
-          ))}
-        </select>
       </div>
     </div>
   );

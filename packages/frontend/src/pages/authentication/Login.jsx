@@ -4,9 +4,9 @@ import { useAuth } from "../../context/auth.context.jsx";
 import loginImg from "../../assets/login.png";
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
-import Alert from "../../components/common/Alert.jsx";
-import api, { endpoints } from "../../lib/api.js";
-import { setTokens } from "../../lib/tokenManager.js"; // ✅ thêm
+import Alert from "../../components/common/Alert.jsx";import api, { endpoints } from "../../lib/api.js";
+import { setTokens } from "../../lib/tokenManager.js";
+import openOAuthPopup from "../../lib/openOAuthPopup.js";
 
 function OAuthNotFoundModal({ email, onClose, onSignup }) {
   return (
@@ -22,6 +22,7 @@ function OAuthNotFoundModal({ email, onClose, onSignup }) {
           </button>
           <button
             className="flex-1 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700"
+
             onClick={onSignup}
           >
             Đăng ký
@@ -31,6 +32,43 @@ function OAuthNotFoundModal({ email, onClose, onSignup }) {
     </div>
   );
 }
+
+/** 🔒 Modal hiển thị khi tài khoản bị khóa */
+function LockedAccountModal({ email, reason, lockedAt, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl p-6 w-[480px]">
+        <h2 className="mb-1 text-lg font-semibold">Tài khoản đã bị khóa</h2>
+        {email ? (
+          <p className="mb-3 text-sm text-gray-600">
+            Email: <b>{email}</b>
+          </p>
+        ) : null}
+
+        <div className="p-3 text-sm text-red-700 border border-red-200 rounded-lg bg-red-50">
+          <div className="font-medium">Lý do:</div>
+          <div className="italic">{reason || "Không có lý do cụ thể."}</div>
+          {lockedAt ? (
+            <div className="mt-2 text-gray-600">
+              Thời điểm khóa: {new Date(lockedAt).toLocaleString()}
+            </div>
+          ) : null}
+        </div>
+
+        <p className="mt-4 text-sm text-gray-600">
+          Vui lòng liên hệ quản trị viên để được mở khóa.
+        </p>
+
+        <div className="mt-4 text-right">
+          <button className="px-4 py-2 border rounded-lg hover:bg-gray-50" onClick={onClose}>
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 export default function Login() {
   const [form, setForm] = useState({ identifier: "", password: "", remember: false });
@@ -42,6 +80,16 @@ export default function Login() {
 
   const [showNotFound, setShowNotFound] = useState(false);
   const [nfEmail, setNfEmail] = useState("");
+
+  // ⬇️ State cho modal "bị khóa"
+  const [lockedInfo, setLockedInfo] = useState({
+    open: false,
+    email: "",
+    reason: "",
+    lockedAt: "",
+  });
+  const openLocked = (info) => setLockedInfo({ open: true, ...info });
+  const closeLocked = () => setLockedInfo({ open: false, email: "", reason: "", lockedAt: "" });
 
   const location = useLocation();
   useEffect(() => {
@@ -55,6 +103,45 @@ export default function Login() {
       window.history.replaceState({}, "", url.toString());
     }
   }, [location.search]);
+
+  // 🔊 Lắng nghe thông điệp trả về từ popup /auth/google/callback
+  useEffect(() => {
+    function onMessage(e) {
+      const be = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+      const origin = (() => {
+        try {
+          return new URL(be).origin;
+        } catch {
+          return "*";
+        }
+      })();
+      if (origin !== "*" && e.origin !== origin) return;
+
+      const data = e.data || {};
+      if (data?.source === "oauth" && data?.provider === "google") {
+        if (data.status === "success" && data.token) {
+          setTokens(data.token, null, true);
+          const role = data?.user?.role;
+          if (role === "ADMIN") navigate("/admin", { replace: true });
+          else navigate("/dashboard", { replace: true });
+        } else if (data.status === "not_found") {
+          setShowNotFound(true);
+          setNfEmail(data.email || "");
+        } else if (data.status === "locked") {
+          // ⬅️ Khi BE báo locked qua popup, mở modal lý do
+          openLocked({
+            email: data.email || "",
+            reason: data.reason || data.lockReason || "",
+            lockedAt: data.lockedAt || "",
+          });
+        }
+        setOauthLoading(false);
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [navigate]);
+
 
   const closeNotFound = () => setShowNotFound(false);
   const goSignup = () => {
@@ -76,6 +163,7 @@ const handleSubmit = async (e) => {
         identifier: form.identifier,
         password: form.password,
         rememberMe: form.remember,
+
       }, navigate);
 
       // Lưu token vào tokenManager
@@ -84,8 +172,8 @@ const handleSubmit = async (e) => {
         result?.data?.token ||
         result?.accessToken ||
         result?.token;
-      const refreshToken =
-        result?.data?.refreshToken || result?.refreshToken || null;
+      const refreshToken = result?.data?.refreshToken || result?.refreshToken || null;
+
 
       if (accessToken) {
         setTokens(accessToken, refreshToken, !!form.remember);
@@ -97,8 +185,20 @@ const handleSubmit = async (e) => {
       } else {
         navigate("/dashboard", { replace: true });
       }
-    } catch (_) {
-      // error đã được context xử lý
+    } catch (e) {
+      // ⬇️ Nếu BE trả 423 Locked, mở modal kèm lý do
+      const st = e?.response?.status;
+      const payload = e?.response?.data || {};
+      const extra = payload?.data || {}; // BE của bạn đặt lockReason/lockedAt trong data
+      if (st === 423) {
+        openLocked({
+          email: form.identifier || payload?.email || "",
+          reason: extra?.lockReason || payload?.lockReason || "",
+          lockedAt: extra?.lockedAt || payload?.lockedAt || "",
+        });
+        return;
+      }
+      // các lỗi khác đã được context xử lý để Alert hiển thị
     }
   };
 
@@ -106,6 +206,7 @@ const handleSubmit = async (e) => {
   const handleGoogleLogin = () => {
     setOauthLoading(true);
     const be = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+
     // chuyển tab hiện tại sang BE để bắt đầu OAuth
     const from = location.state?.from?.pathname;   // ⬅️ lấy from nếu có
   const url = `${be}/auth/google${from ? `?from=${encodeURIComponent(from)}` : ""}`;
@@ -199,10 +300,7 @@ const handleSubmit = async (e) => {
 
           <p className="mt-4 text-sm text-center text-gray-500">
             Don’t have an account?{" "}
-            <span
-              className="text-blue-600 cursor-pointer hover:underline"
-              onClick={() => navigate("/register")}
-            >
+            <span className="text-blue-600 cursor-pointer hover:underline" onClick={() => navigate("/register")}>
               Sign up
             </span>
           </p>
@@ -215,10 +313,16 @@ const handleSubmit = async (e) => {
       </div>
 
       {showNotFound && (
-        <OAuthNotFoundModal
-          email={nfEmail}
-          onClose={closeNotFound}
-          onSignup={goSignup}
+        <OAuthNotFoundModal email={nfEmail} onClose={closeNotFound} onSignup={goSignup} />
+      )}
+
+      {lockedInfo.open && (
+        <LockedAccountModal
+          email={lockedInfo.email}
+          reason={lockedInfo.reason}
+          lockedAt={lockedInfo.lockedAt}
+          onClose={closeLocked}
+ 
         />
       )}
     </div>

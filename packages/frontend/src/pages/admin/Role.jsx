@@ -5,6 +5,7 @@ import { getAdminUsers, patchUserRole } from "../../lib/api.js";
 import { Pencil } from "lucide-react";
 
 const ROLE_FILTERS = ["ALL", "USER", "TRAINER", "ADMIN"];
+const ACTIVE_WINDOW_MIN = 5;
 
 export default function Role() {
   const { user } = useAuth();
@@ -18,8 +19,6 @@ export default function Role() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // trạng thái edit/save cho từng hàng
   const [editingId, setEditingId] = useState(null);
   const [savingId, setSavingId] = useState(null);
 
@@ -53,10 +52,9 @@ export default function Role() {
     load();
   };
 
-  // Chỉ cho phép USER <-> TRAINER. ADMIN không đổi.
   const allowedTargets = (current) => {
-    if (current === "ADMIN") return ["ADMIN"]; // không đổi
-    return ["USER", "TRAINER"]; // qua lại hai role này
+    if (current === "ADMIN") return ["ADMIN"];
+    return ["USER", "TRAINER"];
   };
 
   const handleUpdateRole = async (id, newRole) => {
@@ -72,6 +70,35 @@ export default function Role() {
     }
   };
 
+  const getActivityStatus = (u) => {
+    if (String(u.status || "").toUpperCase() === "BANNED") return "BANNED";
+    if (!u.lastActiveAt) return "INACTIVE";
+    const last = new Date(u.lastActiveAt);
+    const diffMin = (Date.now() - last.getTime()) / (1000 * 60);
+    return diffMin <= ACTIVE_WINDOW_MIN ? "ACTIVE" : "INACTIVE";
+  };
+
+  const StatusBadge = ({ user }) => {
+    const s = getActivityStatus(user);
+    const cls =
+      s === "ACTIVE"
+        ? "bg-green-100 text-green-800"
+        : s === "BANNED"
+        ? "bg-red-100 text-red-800"
+        : "bg-yellow-100 text-yellow-800";
+    const lastSeen = user.lastActiveAt
+      ? new Date(user.lastActiveAt).toLocaleString()
+      : "N/A";
+    return (
+      <span
+        title={`Last active: ${lastSeen}`}
+        className={`px-2 py-1 rounded-full text-xs font-medium ${cls}`}
+      >
+        {s}
+      </span>
+    );
+  };
+
   const page = Math.floor(offset / limit) + 1;
   const pages = Math.max(1, Math.ceil(total / limit));
 
@@ -82,7 +109,6 @@ export default function Role() {
         Logged in as: {user?.username} ({user?.role})
       </div>
 
-      {/* Search box */}
       <form className="flex gap-2 mb-4" onSubmit={onSearch}>
         <input
           value={search}
@@ -95,41 +121,35 @@ export default function Role() {
         </button>
       </form>
 
-      {error && (
-        <div className="mb-3 text-red-600 text-sm">{error.message || "Error"}</div>
-      )}
-
+      {error && <div className="mb-3 text-red-600 text-sm">{error.message}</div>}
       <div className="mb-3 text-sm text-gray-600">Total: {total}</div>
 
-      {/* Table */}
       <div className="overflow-x-auto border rounded">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="text-left p-2">ID</th>
-              <th className="text-left p-2">Username</th>
-              <th className="text-left p-2">Email</th>
-              <th className="text-left p-2">Role</th>
-              <th className="text-left p-2">Status</th>
-              <th className="text-left p-2">Last Login</th>
+              <th className="p-2 text-left">ID</th>
+              <th className="p-2 text-left">Username</th>
+              <th className="p-2 text-left">Email</th>
+              <th className="p-2 text-left">Role</th>
+              <th className="p-2 text-left">Status</th>
+              <th className="p-2 text-left">Last Active</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td className="p-3" colSpan={6}>Loading...</td></tr>
+              <tr><td colSpan={6} className="p-3">Loading...</td></tr>
             ) : items.length === 0 ? (
-              <tr><td className="p-3" colSpan={6}>No users</td></tr>
+              <tr><td colSpan={6} className="p-3">No users</td></tr>
             ) : (
               items.map((u) => {
                 const options = allowedTargets(u.role);
-                const canEdit = options.length > 1; // ADMIN => chỉ 1 option, không cho sửa
+                const canEdit = options.length > 1;
                 return (
                   <tr key={u.user_id} className="border-t">
                     <td className="p-2">{u.user_id}</td>
                     <td className="p-2">{u.username}</td>
                     <td className="p-2">{u.email}</td>
-
-                    {/* Role cell */}
                     <td className="p-2">
                       {editingId === u.user_id && canEdit ? (
                         <div className="flex items-center gap-2">
@@ -148,9 +168,8 @@ export default function Role() {
                             </button>
                           ))}
                           <button
-                            type="button"
                             onClick={() => setEditingId(null)}
-                            className="px-2 py-1 text-gray-500 hover:text-red-600"
+                            className="text-gray-400 hover:text-red-600"
                           >
                             ✕
                           </button>
@@ -160,10 +179,8 @@ export default function Role() {
                           <span>{u.role}</span>
                           {canEdit && (
                             <button
-                              type="button"
                               onClick={() => setEditingId(u.user_id)}
                               className="text-gray-500 hover:text-blue-600"
-                              title="Edit role"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
@@ -171,10 +188,9 @@ export default function Role() {
                         </div>
                       )}
                     </td>
-
-                    <td className="p-2">{u.status}</td>
+                    <td className="p-2"><StatusBadge user={u} /></td>
                     <td className="p-2">
-                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "-"}
+                      {u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString() : "-"}
                     </td>
                   </tr>
                 );
@@ -182,37 +198,6 @@ export default function Role() {
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center gap-2 mt-3">
-        <button
-          className="px-3 py-1 border rounded disabled:opacity-50"
-          onClick={() => setOffset(Math.max(0, offset - limit))}
-          disabled={offset === 0}
-        >
-          Prev
-        </button>
-        <span className="text-sm">Page {page} / {pages}</span>
-        <button
-          className="px-3 py-1 border rounded disabled:opacity-50"
-          onClick={() => setOffset(offset + limit)}
-          disabled={offset + limit >= total}
-        >
-          Next
-        </button>
-        <select
-          className="ml-2 border rounded px-2 py-1"
-          value={limit}
-          onChange={(e) => {
-            setLimit(parseInt(e.target.value, 10));
-            setOffset(0);
-          }}
-        >
-          {[10, 20, 50, 100].map((n) => (
-            <option key={n} value={n}>{n}/page</option>
-          ))}
-        </select>
       </div>
     </div>
   );

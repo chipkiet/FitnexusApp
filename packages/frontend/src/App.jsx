@@ -10,6 +10,8 @@ import ForgotPassword from "./pages/authentication/ForgotPassword.jsx";
 import VerifyCode from "./pages/authentication/VerifyCode.jsx";
 import ResetPassword from "./pages/authentication/ResetPassword.jsx";
 import Landing from "./pages/landing/Landing.jsx";
+import NutritionAI from "./pages/landing/NutritionAI.jsx";
+import NutritionPersonalize from "./pages/landing/NutritionPersonalize.jsx";
 import Dashboard from "./pages/user/Dashboard.jsx";
 import ModelingPage from "./components/ModelingPage.jsx";
 import MainLayout from "./layouts/MainLayout.jsx";
@@ -42,6 +44,7 @@ import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
 
 // (Optional) trang quản lý users nếu bạn có file này
+
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
 
 function PrivateRoute({ children }) {
@@ -104,6 +107,8 @@ function App() {
           {/* Main app routes */}
           {/* Public landing page at root shows Dashboard */}
           <Route path="/" element={<Landing />} />
+          <Route path="/nutrition-ai" element={<NutritionAI />} />
+          <Route path="/nutrition-ai/personalize" element={<NutritionPersonalize />} />
 
           {/* Main layout with protected routes */}
           <Route
@@ -150,6 +155,4 @@ function App() {
 
 
 export default App;
-
-
 
