@@ -18,12 +18,12 @@ const CANONICAL_CHILD = new Set([
 ]);
 
 const PARENT_ALIASES = new Map([
-  ['chest', ['chest','nguc','upper arms?','torso']],
+  ['chest', ['chest','nguc','torso']],
   ['back', ['back','lung','upper-back','lower-back','lats','latissimus-dorsi','trapezius','rhomboids','erector-spinae','teres-major']],
   ['shoulders', ['shoulders','vai','delts','anterior-deltoid','lateral-deltoid','posterior-deltoid','rotator-cuff','serratus-anterior']],
-  ['arms', ['arms','tay','biceps','biceps-brachii','triceps','triceps-brachii','forearms','brachialis','brachioradialis','wrist-flexors','wrist-extensors']],
+  ['arms', ['arms','tay','upper arms','upper-arms','biceps','biceps-brachii','triceps','triceps-brachii','forearms','brachialis','brachioradialis','wrist-flexors','wrist-extensors']],
   ['core', ['core','abs','abdominals','rectus-abdominis','obliques','transversus-abdominis','bung','bung']],
-  ['legs', ['legs','chan','quadriceps','hamstrings','gluteus-maximus','gluteus-medius','gluteus-minimus','hip-adductors','hip-flexors','gastrocnemius','soleus','tibialis-anterior','calf','calves']]
+  ['legs', ['legs','chan','upper legs','upper-legs','lower legs','lower-legs','quadriceps','hamstrings','gluteus-maximus','gluteus-medius','gluteus-minimus','hip-adductors','hip-flexors','gastrocnemius','soleus','tibialis-anterior','calf','calves']]
 ]);
 
 function guessSlugOrParent(input) {
@@ -45,11 +45,23 @@ export const getExercisesByMuscleGroup = async (req, res) => {
     let rows = [];
     if (guessed.childSlug) {
       const [result] = await sequelize.query(
-        `SELECT DISTINCT e.*
-         FROM exercises e
-         JOIN exercise_muscle_group emg ON emg.exercise_id = e.exercise_id
-         JOIN muscle_groups mg ON mg.muscle_group_id = emg.muscle_group_id
-         WHERE mg.slug = :slug
+        `WITH classified AS (
+           SELECT e.exercise_id,
+                  CASE
+                    WHEN bool_or(emg.impact_level = 'primary') THEN 'primary'
+                    WHEN bool_or(emg.impact_level = 'secondary') THEN 'secondary'
+                    WHEN bool_or(emg.impact_level = 'stabilizer') THEN 'stabilizer'
+                    ELSE NULL
+                  END AS impact_level
+           FROM exercises e
+           JOIN exercise_muscle_group emg ON emg.exercise_id = e.exercise_id
+           JOIN muscle_groups mg ON mg.muscle_group_id = emg.muscle_group_id
+           WHERE mg.slug = :slug
+           GROUP BY e.exercise_id
+         )
+         SELECT e.*, c.impact_level
+         FROM classified c
+         JOIN exercises e ON e.exercise_id = c.exercise_id
          ORDER BY e.popularity_score DESC NULLS LAST, e.name ASC
          LIMIT 100`,
         { replacements: { slug: guessed.childSlug } }
@@ -57,12 +69,24 @@ export const getExercisesByMuscleGroup = async (req, res) => {
       rows = result;
     } else if (guessed.parentSlug) {
       const [result] = await sequelize.query(
-        `SELECT DISTINCT e.*
-         FROM exercises e
-         JOIN exercise_muscle_group emg ON emg.exercise_id = e.exercise_id
-         JOIN muscle_groups mg ON mg.muscle_group_id = emg.muscle_group_id
-         JOIN muscle_groups parent ON parent.muscle_group_id = mg.parent_id
-         WHERE parent.slug = :parent
+        `WITH classified AS (
+          SELECT e.exercise_id,
+                 CASE
+                   WHEN bool_or(emg.impact_level = 'primary') THEN 'primary'
+                   WHEN bool_or(emg.impact_level = 'secondary') THEN 'secondary'
+                   WHEN bool_or(emg.impact_level = 'stabilizer') THEN 'stabilizer'
+                   ELSE NULL
+                 END AS impact_level
+          FROM exercises e
+          JOIN exercise_muscle_group emg ON emg.exercise_id = e.exercise_id
+          JOIN muscle_groups mg ON mg.muscle_group_id = emg.muscle_group_id
+          JOIN muscle_groups parent ON parent.muscle_group_id = mg.parent_id
+          WHERE parent.slug = :parent
+          GROUP BY e.exercise_id
+        )
+        SELECT e.*, c.impact_level
+        FROM classified c
+        JOIN exercises e ON e.exercise_id = c.exercise_id
          ORDER BY e.popularity_score DESC NULLS LAST, e.name ASC
          LIMIT 100`,
         { replacements: { parent: guessed.parentSlug } }
@@ -71,11 +95,23 @@ export const getExercisesByMuscleGroup = async (req, res) => {
     } else {
       // Fallback: try by slug, then by Vietnamese/English name
       const [bySlug] = await sequelize.query(
-        `SELECT DISTINCT e.*
-         FROM exercises e
-         JOIN exercise_muscle_group emg ON emg.exercise_id = e.exercise_id
-         JOIN muscle_groups mg ON mg.muscle_group_id = emg.muscle_group_id
-         WHERE mg.slug = :slug
+        `WITH classified AS (
+           SELECT e.exercise_id,
+                  CASE
+                    WHEN bool_or(emg.impact_level = 'primary') THEN 'primary'
+                    WHEN bool_or(emg.impact_level = 'secondary') THEN 'secondary'
+                    WHEN bool_or(emg.impact_level = 'stabilizer') THEN 'stabilizer'
+                    ELSE NULL
+                  END AS impact_level
+           FROM exercises e
+           JOIN exercise_muscle_group emg ON emg.exercise_id = e.exercise_id
+           JOIN muscle_groups mg ON mg.muscle_group_id = emg.muscle_group_id
+           WHERE mg.slug = :slug
+           GROUP BY e.exercise_id
+         )
+         SELECT e.*, c.impact_level
+         FROM classified c
+         JOIN exercises e ON e.exercise_id = c.exercise_id
          LIMIT 100`,
         { replacements: { slug: muscleGroup.toLowerCase().replace(/\s+/g, '-') } }
       );
@@ -83,11 +119,23 @@ export const getExercisesByMuscleGroup = async (req, res) => {
         rows = bySlug;
       } else {
         const [byName] = await sequelize.query(
-          `SELECT DISTINCT e.*
-           FROM exercises e
-           JOIN exercise_muscle_group emg ON emg.exercise_id = e.exercise_id
-           JOIN muscle_groups mg ON mg.muscle_group_id = emg.muscle_group_id
-           WHERE mg.name ILIKE :q OR mg.name_en ILIKE :q
+          `WITH classified AS (
+            SELECT e.exercise_id,
+                   CASE
+                     WHEN bool_or(emg.impact_level = 'primary') THEN 'primary'
+                     WHEN bool_or(emg.impact_level = 'secondary') THEN 'secondary'
+                     WHEN bool_or(emg.impact_level = 'stabilizer') THEN 'stabilizer'
+                     ELSE NULL
+                   END AS impact_level
+            FROM exercises e
+            JOIN exercise_muscle_group emg ON emg.exercise_id = e.exercise_id
+            JOIN muscle_groups mg ON mg.muscle_group_id = emg.muscle_group_id
+            WHERE mg.name ILIKE :q OR mg.name_en ILIKE :q
+            GROUP BY e.exercise_id
+          )
+          SELECT e.*, c.impact_level
+          FROM classified c
+          JOIN exercises e ON e.exercise_id = c.exercise_id
            LIMIT 100`,
           { replacements: { q: `%${muscleGroup}%` } }
         );
@@ -104,6 +152,7 @@ export const getExercisesByMuscleGroup = async (req, res) => {
       equipment: r.equipment_needed,
       imageUrl: r.thumbnail_url || r.gif_demo_url || null,
       instructions: null,
+      impact_level: r.impact_level || null,
     }));
 
     res.status(200).json({ success: true, data });
@@ -128,6 +177,7 @@ export const getAllExercises = async (_req, res) => {
       equipment: r.equipment_needed,
       imageUrl: r.thumbnail_url || r.gif_demo_url || null,
       instructions: null,
+      impact_level: r.impact_level || null,
     }));
     res.status(200).json({ success: true, data });
   } catch (error) {

@@ -10,10 +10,11 @@ import ForgotPassword from "./pages/authentication/ForgotPassword.jsx";
 import VerifyCode from "./pages/authentication/VerifyCode.jsx";
 import ResetPassword from "./pages/authentication/ResetPassword.jsx";
 import Landing from "./pages/landing/Landing.jsx";
-import NutritionAI from "./pages/landing/NutritionAI.jsx";
-import NutritionPersonalize from "./pages/landing/NutritionPersonalize.jsx";
+import NutritionAI from "./pages/nutrition/NutritionAI.jsx";
+import NutritionPersonalize from "./pages/nutrition/NutritionPersonalize.jsx";
 import Dashboard from "./pages/user/Dashboard.jsx";
-import ModelingPage from "./components/ModelingPage.jsx";
+import Modeling from "./pages/model3D/Modeling.jsx";
+import ExerciseDetail from "./pages/exercises/ExerciseDetail.jsx";
 import MainLayout from "./layouts/MainLayout.jsx";
 
 // Onboarding
@@ -119,7 +120,8 @@ function App() {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/modeling" element={<ModelingPage />} />
+            <Route path="/modeling" element={<Modeling />} />
+            <Route path="/exercises/:id" element={<ExerciseDetail />} />
           </Route>
 
 
@@ -155,4 +157,3 @@ function App() {
 
 
 export default App;
-
