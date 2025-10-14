@@ -189,3 +189,71 @@ export const getAllExercises = async (_req, res) => {
     });
   }
 };
+
+// Return steps (JSON preferred) by exercise id
+export const getExerciseStepsById = async (req, res) => {
+  try {
+    const { exerciseId } = req.params;
+    // Prefer JSON table
+    const [jsonRows] = await sequelize.query(
+      `SELECT steps FROM exercise_steps_json WHERE exercise_id = $1 LIMIT 1`,
+      { bind: [exerciseId] }
+    );
+    if (jsonRows.length) {
+      return res.status(200).json({ success: true, data: jsonRows[0].steps });
+    }
+    // Fallback to row-level steps
+    const [rows] = await sequelize.query(
+      `SELECT step_number, title, instruction_text, media_url, media_type
+       FROM exercise_steps WHERE exercise_id = $1 ORDER BY step_number ASC`,
+      { bind: [exerciseId] }
+    );
+    const steps = rows.map(r => ({
+      step_number: r.step_number,
+      instruction_text: r.instruction_text,
+      title: r.title,
+      media_url: r.media_url,
+      media_type: r.media_type,
+    }));
+    return res.status(200).json({ success: true, data: steps });
+  } catch (error) {
+    console.error('Error fetching steps by id:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching steps', error: error.message });
+  }
+};
+
+// Return steps by slug
+export const getExerciseStepsBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const [exRows] = await sequelize.query(
+      `SELECT exercise_id FROM exercises WHERE slug = $1 LIMIT 1`,
+      { bind: [slug] }
+    );
+    if (!exRows.length) return res.status(404).json({ success: false, message: 'Exercise not found' });
+    const exerciseId = exRows[0].exercise_id;
+    const [jsonRows] = await sequelize.query(
+      `SELECT steps FROM exercise_steps_json WHERE exercise_id = $1 LIMIT 1`,
+      { bind: [exerciseId] }
+    );
+    if (jsonRows.length) {
+      return res.status(200).json({ success: true, data: jsonRows[0].steps });
+    }
+    const [rows] = await sequelize.query(
+      `SELECT step_number, title, instruction_text, media_url, media_type
+       FROM exercise_steps WHERE exercise_id = $1 ORDER BY step_number ASC`,
+      { bind: [exerciseId] }
+    );
+    const steps = rows.map(r => ({
+      step_number: r.step_number,
+      instruction_text: r.instruction_text,
+      title: r.title,
+      media_url: r.media_url,
+      media_type: r.media_type,
+    }));
+    return res.status(200).json({ success: true, data: steps });
+  } catch (error) {
+    console.error('Error fetching steps by slug:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching steps', error: error.message });
+  }
+};
