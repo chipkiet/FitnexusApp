@@ -16,7 +16,6 @@ import Dashboard from "./pages/user/Dashboard.jsx";
 import Modeling from "./pages/model3D/Modeling.jsx";
 import ModelingPreview from "./pages/model3D/ModelingPreview.jsx";
 import ExerciseDetail from "./pages/exercises/ExerciseDetail.jsx";
-import MainLayout from "./layouts/MainLayout.jsx";
 import Exercises from "./pages/exercises/Exercises.jsx";
 
 // Onboarding
@@ -116,18 +115,35 @@ function App() {
           <Route path="/modeling-preview" element={<ModelingPreview />} />
           <Route path="/exercises" element={<Exercises/>}/>
 
-          {/* Main layout with protected routes */}
+          {/* Protected route: exercise detail (no MainLayout) */}
           <Route
+            path="/exercises/:id"
             element={
               <PrivateRoute>
-                <MainLayout />
+                <ExerciseDetail />
               </PrivateRoute>
             }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/modeling" element={<Modeling />} />
-            <Route path="/exercises/:id" element={<ExerciseDetail />} />
-          </Route>
+          />
+
+          {/* Protected route without MainLayout (dashboard full control) */}
+          <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Protected route without MainLayout (full control) */}
+          <Route
+            path="/modeling"
+            element={
+              <PrivateRoute>
+                <Modeling />
+              </PrivateRoute>
+            }
+          />
 
 
 
