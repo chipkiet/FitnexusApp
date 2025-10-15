@@ -39,13 +39,16 @@ export default function Exercises() {
   const [impact, setImpact] = useState("");
   const [population, setPopulation] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
+  const [total, setTotal] = useState(0);
   
   // API state
   const [rawExercises, setRawExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch exercises on mount and when selectedGroup changes
+  // Fetch exercises on mount and when selectedGroup or page changes
   useEffect(() => {
     let isMounted = true;
     const fetchExercises = async () => {
@@ -55,17 +58,18 @@ export default function Exercises() {
         let res;
         if (!selectedGroup) {
           // default list
-          res = await axios.get('/api/exercises');
+          res = await axios.get('/api/exercises', { params: { page, pageSize } });
         } else if (selectedGroup === 'cardio') {
           // cardio is an exercise type, not a muscle group
-          res = await axios.get('/api/exercises/type/cardio');
+          res = await axios.get('/api/exercises/type/cardio', { params: { page, pageSize } });
         } else {
           // fetch by muscle group (supports parent/child aliases on BE)
-          res = await axios.get(`/api/exercises/muscle/${selectedGroup}`);
+          res = await axios.get(`/api/exercises/muscle/${selectedGroup}`, { params: { page, pageSize } });
         }
         if (isMounted) {
           if (res.data?.success) {
             setRawExercises(res.data.data || []);
+            setTotal(res.data.total || 0);
           } else {
             setError('Không thể tải danh sách bài tập');
           }
@@ -80,7 +84,7 @@ export default function Exercises() {
     };
     fetchExercises();
     return () => { isMounted = false; };
-  }, [selectedGroup]);
+  }, [selectedGroup, page]);
 
   const groupSynonyms = {
     "abs": ["abs", "abdominals", "core", "stomach", "rectus-abdominis", "obliques"],
@@ -189,6 +193,7 @@ export default function Exercises() {
     setImpact("");
     setPopulation("");
     setSearch("");
+    setPage(1);
   };
 
   return (
@@ -228,7 +233,7 @@ export default function Exercises() {
                 <button
                   key={g.id}
                   type="button"
-                  onClick={() => setSelectedGroup(active ? null : g.id)}
+                  onClick={() => { setSelectedGroup(active ? null : g.id); setPage(1); }}
                   className={[
                     "flex flex-col items-center justify-center gap-2 border rounded-lg p-3",
                     active ? "border-blue-500 ring-2 ring-blue-100" : "border-gray-200 hover:border-gray-300",
@@ -305,6 +310,37 @@ export default function Exercises() {
           ) : null}
 
           <ExerciseList exercises={filtered} loading={loading} error={error} />
+
+          {/* Pagination controls */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600">
+              Trang {page} / {Math.max(1, Math.ceil((total || 0) / pageSize))}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className={[
+                  "px-3 py-2 text-sm border rounded-lg",
+                  page <= 1 || loading ? "text-gray-400 border-gray-200" : "border-gray-300 hover:bg-gray-50"
+                ].join(" ")}
+              >
+                Trang trước
+              </button>
+              <button
+                type="button"
+                disabled={loading || page >= Math.max(1, Math.ceil((total || 0) / pageSize))}
+                onClick={() => setPage((p) => p + 1)}
+                className={[
+                  "px-3 py-2 text-sm border rounded-lg",
+                  loading || page >= Math.max(1, Math.ceil((total || 0) / pageSize)) ? "text-gray-400 border-gray-200" : "border-gray-300 hover:bg-gray-50"
+                ].join(" ")}
+              >
+                Trang sau
+              </button>
+            </div>
+          </div>
         </section>
       </main>
     </div>
