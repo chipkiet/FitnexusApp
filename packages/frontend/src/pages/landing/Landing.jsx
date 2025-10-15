@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
 // Muscle icons for library section
@@ -21,6 +21,17 @@ import { Bounds, OrbitControls } from "@react-three/drei";
 const Fitnexus3DLanding = () => {
   const navigate = useNavigate();
   const [hoveredPart, setHoveredPart] = useState(null);
+  const [controlsActive, setControlsActive] = useState(false);
+  const canvasWrapRef = useRef(null);
+
+  // Bam ESC de thoat dieu kien
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key == "Escape") setControlsActive(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Danh sách nhóm cơ hiển thị theo mockup
   const muscleGroups = [
@@ -64,18 +75,18 @@ const Fitnexus3DLanding = () => {
             <img src={logo} alt="Fitnexus logo" className="h-48" />
           </div>
           <nav className="hidden gap-8 md:flex">
-            <a
-              href="#features"
+            <button
               className="text-base/6 white:text-dark hover:underline text-text-primary"
+              onClick={() => navigate("/modeling-preview")}
             >
               Mô hình hoá
-            </a>
-            <a
-              href="#library"
+            </button>
+            <button
               className="text-base/6 dark:text-white hover:underline text-text-primary"
+              onClick={() => navigate("/exercises")}
             >
               Thư viện tập
-            </a>
+            </button>
             <a
               href="#testimonials"
               className="text-base/6 dark:text-white hover:underline text-text-primary"
@@ -180,11 +191,22 @@ const Fitnexus3DLanding = () => {
             {/* Laptop Frame */}
             <div className="relative">
               {/* Screen */}
-              <div className="p-4 bg-gray-800 border-4 border-gray-700 rounded-t-2xl">
+              <div className="p-4 bg-gray-400 border-4 border-gray-500 rounded-t-xl">
                 <div className="overflow-hidden bg-black rounded-lg aspect-video">
-                  {/* 3D Model Content */}
-                  <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-900 to-black">
-                    <div className="w-full h-full">
+                  <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-gray-200 to-gray300">
+                    <div
+                      ref={canvasWrapRef}
+                      tabIndex={0} // để nhận blur khi click ra ngoài
+                      onPointerDown={() => setControlsActive(true)} // click để bật điều khiển
+                      onPointerUp={() => {
+                        /* không tắt ngay để người dùng kéo/zoom */
+                      }}
+                      onPointerLeave={() => setControlsActive(false)} // rời khung là tắt
+                      onBlur={() => setControlsActive(false)} // mất focus là tắt
+                      // Mobile: khi chưa active, cho phép cuộn dọc; khi active, chặn gesture để xoay/zoom mượt
+                      style={{ touchAction: controlsActive ? "none" : "pan-y" }}
+                      className="w-full h-full"
+                    >
                       <Canvas
                         camera={{
                           position: [0, 1.6, 5],
@@ -207,10 +229,17 @@ const Fitnexus3DLanding = () => {
                             <HumanModel />
                           </Bounds>
                         </Suspense>
+
+                        {/* CHỈ bật điều khiển khi người dùng đã click vào khung */}
                         <OrbitControls
                           makeDefault
                           target={[0, 1, 0]}
+                          // Không cho pan; tùy ý bật nếu bạn muốn
                           enablePan={false}
+                          // Gate toàn bộ điều khiển theo state
+                          enabled={controlsActive}
+                          enableZoom={controlsActive}
+                          enableRotate={controlsActive}
                           minDistance={1}
                           maxDistance={10}
                           zoomSpeed={0.9}
@@ -222,7 +251,13 @@ const Fitnexus3DLanding = () => {
               </div>
               {/* Laptop Base */}
               <div className="h-6 bg-gradient-to-b from-gray-700 to-gray-800 rounded-b-2xl"></div>
+
               <div className="w-3/4 h-2 mx-auto bg-gray-900 rounded-b-3xl"></div>
+              {!controlsActive && (
+                <div className="absolute px-3 py-1 text-xs text-white rounded-full right-4 top-4 bg-black/60">
+                  Nhấn vào mô hình để xoay/zoom
+                </div>
+              )}
             </div>
 
             {/* Floating Feature Cards */}
@@ -261,7 +296,10 @@ const Fitnexus3DLanding = () => {
 
           {/* CTA Below Laptop */}
           <div className="mt-16 text-center">
-            <button className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold transition rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:scale-105">
+            <button
+              className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold transition rounded-full bg-gradient-to-r from-gray-500 to-black-200 hover:scale-105"
+              onClick={() => navigate("/modeling-preview")}
+            >
               Khám phá ngay
               <ChevronRight size={24} />
             </button>
@@ -320,7 +358,9 @@ const Fitnexus3DLanding = () => {
             </div>
           </div>
 
-          <button>Xem thêm nhiều bài tập</button>
+          <button onClick={() => navigate("/exercises")}>
+            Xem thêm nhiều bài tập
+          </button>
         </div>
       </section>
 
@@ -382,7 +422,7 @@ const Fitnexus3DLanding = () => {
             <button
               type="button"
               onClick={() => navigate("/nutrition-ai")}
-              className="inline-flex items-center gap-2 px-6 py-3 font-semibold text-white transition rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90"
+              className="inline-flex items-center gap-2 px-6 py-3 font-semibold text-white transition rounded-full bg-gradient-to-r from-gray-500 to-black-600 hover:opacity-90"
             >
               Khám phá Nutrition AI
               <ChevronRight size={20} />

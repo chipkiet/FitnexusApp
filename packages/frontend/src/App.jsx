@@ -17,6 +17,7 @@ import Modeling from "./pages/model3D/Modeling.jsx";
 import ModelingPreview from "./pages/model3D/ModelingPreview.jsx";
 import ExerciseDetail from "./pages/exercises/ExerciseDetail.jsx";
 import MainLayout from "./layouts/MainLayout.jsx";
+import Exercises from "./pages/exercises/Exercises.jsx";
 
 // Onboarding
 import OnboardingAge from "./pages/boardings/OnboardingAge.jsx";
@@ -112,7 +113,8 @@ function App() {
           <Route path="/nutrition-ai" element={<NutritionAI />} />
           <Route path="/nutrition-ai/personalize" element={<NutritionPersonalize />} />
           {/* Public 3D modeling preview */}
-          <Route path="/modelingPreview" element={<ModelingPreview />} />
+          <Route path="/modeling-preview" element={<ModelingPreview />} />
+          <Route path="/exercises" element={<Exercises/>}/>
 
           {/* Main layout with protected routes */}
           <Route
