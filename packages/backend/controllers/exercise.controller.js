@@ -18,13 +18,67 @@ const CANONICAL_CHILD = new Set([
 ]);
 
 const PARENT_ALIASES = new Map([
-  ['chest', ['chest','nguc','torso']],
-  ['back', ['back','lung','upper-back','lower-back','lats','latissimus-dorsi','trapezius','rhomboids','erector-spinae','teres-major']],
-  ['shoulders', ['shoulders','vai','delts','anterior-deltoid','lateral-deltoid','posterior-deltoid','rotator-cuff','serratus-anterior']],
-  ['arms', ['arms','tay','upper arms','upper-arms','biceps','biceps-brachii','triceps','triceps-brachii','forearms','brachialis','brachioradialis','wrist-flexors','wrist-extensors']],
-  ['core', ['core','abs','abdominals','rectus-abdominis','obliques','transversus-abdominis','bung','bung']],
-  ['legs', ['legs','chan','upper legs','upper-legs','lower legs','lower-legs','quadriceps','hamstrings','gluteus-maximus','gluteus-medius','gluteus-minimus','hip-adductors','hip-flexors','gastrocnemius','soleus','tibialis-anterior','calf','calves']]
+  [
+    'chest',
+    [
+      'chest', 'nguc', 'torso',
+      'pec', 'pecs',
+      'upper chest', 'upper-chest',
+      'mid chest', 'mid-chest',
+      'lower chest', 'lower-chest',
+    ]
+  ],
+  [
+    'back',
+    [
+      'back', 'lung',
+      'upper-back', 'upper back',
+      'lower-back', 'lower back',
+      'lats', 'latissimus', 'latissimus-dorsi',
+      'trapezius', 'traps',
+      'rhomboids', 'erector-spinae', 'teres-major',
+      'neck',
+    ]
+  ],
+  [
+    'shoulders',
+    [
+      'shoulders', 'shoulder', 'vai', 'delts', 'deltoids',
+      'anterior-deltoid', 'lateral-deltoid', 'posterior-deltoid', 'rotator-cuff', 'serratus-anterior',
+    ]
+  ],
+  [
+    'arms',
+    [
+      'arms', 'tay', 'upper arms', 'upper-arms', 'lower-arms', 'lower arms',
+      'forearm', 'forearms',
+      'biceps', 'biceps-brachii',
+      'triceps', 'triceps-brachii',
+      'brachialis', 'brachioradialis',
+      'wrist-flexors', 'wrist-extensors',
+    ]
+  ],
+  [
+    'core',
+    [
+      'core', 'abs', 'abdominals', 'rectus-abdominis', 'obliques', 'transversus-abdominis',
+      'bung', 'waist',
+    ]
+  ],
+  [
+    'legs',
+    [
+      'legs', 'chan', 'upper legs', 'upper-legs', 'lower legs', 'lower-legs',
+      'quads', 'quadriceps', 'hamstrings',
+      'glutes', 'glute', 'butt',
+      'gluteus-maximus', 'gluteus-medius', 'gluteus-minimus',
+      'hip-adductors', 'hip-flexors',
+      'gastrocnemius', 'soleus', 'tibialis-anterior',
+      'calf', 'calves',
+    ]
+  ],
 ]);
+
 
 function guessSlugOrParent(input) {
   const raw = normalize(input);
@@ -187,6 +241,41 @@ export const getAllExercises = async (_req, res) => {
       message: "Error fetching exercises",
       error: error.message,
     });
+  }
+};
+
+// Filter by exercise type (compound | isolation | cardio | flexibility)
+export const getExercisesByType = async (req, res) => {
+  try {
+    const { type } = req.params;
+    const t = normalize(type).replace(/\s+/g, '-');
+    const allowed = new Set(['compound', 'isolation', 'cardio', 'flexibility']);
+    if (!allowed.has(t)) {
+      return res.status(400).json({ success: false, message: 'Invalid exercise type', allowed: Array.from(allowed) });
+    }
+
+    const [rows] = await sequelize.query(
+      `SELECT * FROM exercises WHERE exercise_type = $1
+       ORDER BY popularity_score DESC NULLS LAST, name ASC
+       LIMIT 100`,
+      { bind: [t] }
+    );
+
+    const data = rows.map((r) => ({
+      id: r.exercise_id,
+      name: r.name || r.name_en,
+      description: r.description,
+      difficulty: r.difficulty_level,
+      equipment: r.equipment_needed,
+      imageUrl: r.thumbnail_url || r.gif_demo_url || null,
+      instructions: null,
+      impact_level: null,
+    }));
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error('Error fetching exercises by type:', error);
+    return res.status(500).json({ success: false, message: 'Error fetching exercises by type', error: error.message });
   }
 };
 

@@ -1,6 +1,6 @@
-
-import React, { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 import logo from "../../assets/logo.png";
 import absIcon from "../../assets/body/coreIcon.svg";
@@ -17,9 +17,8 @@ import lowerLegsIcon from "../../assets/body/lowerLegsIcon.svg";
 
 import ExerciseList from "../../components/ExerciseList.jsx";
 
-export default function Exercises(props) {
+export default function Exercises() {
   const navigate = useNavigate();
-  const { state } = useLocation();
 
   const muscleGroups = [
     { id: "abs", label: "Abs", icon: absIcon },
@@ -40,45 +39,59 @@ export default function Exercises(props) {
   const [impact, setImpact] = useState("");
   const [population, setPopulation] = useState("");
   const [search, setSearch] = useState("");
+  
+  // API state
+  const [rawExercises, setRawExercises] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const rawExercises = useMemo(() => {
-    if (Array.isArray(props?.exercises)) return props.exercises;
-    if (Array.isArray(state?.exercises)) return state.exercises;
-    if (typeof window !== "undefined" && Array.isArray(window.__EXERCISES__)) {
-      return window.__EXERCISES__;
-    }
-    return [];
-  }, [props?.exercises, state?.exercises]);
-
-  const fieldMap = props?.fieldMap || {
-    id: ["id", "_id", "uuid"],
-    name: ["name", "title"],
-    image: ["imageUrl", "gifUrl", "image", "img"],
-    description: ["description", "desc"],
-    level: ["level", "difficulty", "experience", "skillLevel"],
-    impact: ["impact", "impact_level", "impactLevel", "mechanic", "force"],
-    population: ["population", "gender", "targetPopulation"],
-    bodyParts: [
-      "bodyPart",
-      "target",
-      "muscle",
-      "muscles",
-      "primaryMuscles",
-      "secondaryMuscles",
-      "muscle_target",
-    ],
-  };
+  // Fetch exercises on mount and when selectedGroup changes
+  useEffect(() => {
+    let isMounted = true;
+    const fetchExercises = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        let res;
+        if (!selectedGroup) {
+          // default list
+          res = await axios.get('/api/exercises');
+        } else if (selectedGroup === 'cardio') {
+          // cardio is an exercise type, not a muscle group
+          res = await axios.get('/api/exercises/type/cardio');
+        } else {
+          // fetch by muscle group (supports parent/child aliases on BE)
+          res = await axios.get(`/api/exercises/muscle/${selectedGroup}`);
+        }
+        if (isMounted) {
+          if (res.data?.success) {
+            setRawExercises(res.data.data || []);
+          } else {
+            setError('Không thể tải danh sách bài tập');
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err?.message || 'Lỗi kết nối đến server');
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchExercises();
+    return () => { isMounted = false; };
+  }, [selectedGroup]);
 
   const groupSynonyms = {
-    "abs": ["abs", "abdominals", "core", "stomach"],
-    "back": ["back", "lats", "latissimus", "lower back", "upper back"],
-    "biceps": ["biceps"],
+    "abs": ["abs", "abdominals", "core", "stomach", "rectus-abdominis", "obliques"],
+    "back": ["back", "lats", "latissimus", "lower back", "upper back", "trapezius", "rhomboids"],
+    "biceps": ["biceps", "biceps-brachii", "brachialis"],
     "cardio": ["cardio", "aerobic"],
-    "chest": ["chest", "pectorals", "pecs"],
-    "forearms": ["forearms", "forearm"],
-    "glutes": ["glutes", "glute", "butt", "gluteus"],
-    "shoulders": ["shoulders", "delts", "deltoids"],
-    "triceps": ["triceps"],
+    "chest": ["chest", "pectorals", "pecs", "upper-chest", "mid-chest", "lower-chest"],
+    "forearms": ["forearms", "forearm", "wrist-flexors", "wrist-extensors"],
+    "glutes": ["glutes", "glute", "butt", "gluteus", "gluteus-maximus", "gluteus-medius"],
+    "shoulders": ["shoulders", "delts", "deltoids", "anterior-deltoid", "lateral-deltoid", "posterior-deltoid"],
+    "triceps": ["triceps", "triceps-brachii"],
     "upper-legs": [
       "upper legs",
       "quadriceps",
@@ -87,16 +100,9 @@ export default function Exercises(props) {
       "thighs",
       "adductors",
       "abductors",
+      "hip-flexors",
     ],
     "lower-legs": ["lower legs", "calves", "calf", "gastrocnemius", "soleus"],
-  };
-
-  const pickFirst = (obj, keys) => {
-    for (const k of keys) {
-      const v = obj?.[k];
-      if (v != null) return v;
-    }
-    return undefined;
   };
 
   const normalizeStr = (v) =>
@@ -110,31 +116,21 @@ export default function Exercises(props) {
     return [v];
   };
 
+  // Normalize exercises từ backend format
   const normalized = useMemo(() => {
     return rawExercises.map((ex) => {
-      const id = pickFirst(ex, fieldMap.id);
-      const name = pickFirst(ex, fieldMap.name);
-      const image = pickFirst(ex, fieldMap.image);
-      const description = pickFirst(ex, fieldMap.description);
-      const levelVal = pickFirst(ex, fieldMap.level);
-      const impactVal = pickFirst(ex, fieldMap.impact);
-      const populationVal = pickFirst(ex, fieldMap.population);
-      const partsRaw = toArray(pickFirst(ex, fieldMap.bodyParts));
-
-      const parts = partsRaw
-        .flatMap((p) => toArray(p))
-        .map((p) => normalizeStr(p).replace(/_/g, " "))
-        .filter(Boolean);
-
+      // Backend trả về: id, name, description, difficulty, equipment, imageUrl, impact_level
       return {
-        id: id ?? name ?? Math.random().toString(36).slice(2),
-        name: name ?? "",
-        imageUrl: image ?? "",
-        description: description ?? "",
-        difficulty: levelVal ?? "",
-        impact: impactVal ?? "",
-        population: populationVal ?? "",
-        parts,
+        id: ex.id,
+        name: ex.name || "",
+        imageUrl: ex.imageUrl || "",
+        description: ex.description || "",
+        difficulty: ex.difficulty || "",
+        impact: ex.impact_level || "",
+        population: ex.population || "",
+        equipment: ex.equipment || "",
+        // Lấy muscle groups từ target/secondary nếu có
+        parts: [], // Backend chưa trả về parts detail, sẽ cần expand sau
         __raw: ex,
       };
     });
@@ -158,11 +154,17 @@ export default function Exercises(props) {
 
   const matchesGroup = (ex, groupId) => {
     if (!groupId) return true;
+    
+    // Tạm thời dùng logic cơ bản, sau này có thể fetch theo /api/exercises/muscle/:muscleGroup
     const synonyms = groupSynonyms[groupId] || [groupId];
     const tokens = ex.parts || [];
-    for (const t of tokens) {
-      for (const s of synonyms) {
-        const ss = normalizeStr(s).replace(/-/g, " ");
+    
+    // Check trong parts hoặc tên bài tập
+    const nameNorm = normalizeStr(ex.name);
+    for (const s of synonyms) {
+      const ss = normalizeStr(s).replace(/-/g, " ");
+      if (nameNorm.includes(ss)) return true;
+      for (const t of tokens) {
         if (t.includes(ss)) return true;
       }
     }
@@ -172,7 +174,7 @@ export default function Exercises(props) {
   const filtered = useMemo(() => {
     const q = normalizeStr(search);
     return normalized.filter((ex) => {
-      if (selectedGroup && !matchesGroup(ex, selectedGroup)) return false;
+      // Khi đã fetch theo nhóm cơ ở BE, không cần lọc nhóm ở FE nữa
       if (level && normalizeStr(ex.difficulty) !== normalizeStr(level)) return false;
       if (impact && normalizeStr(ex.impact) !== normalizeStr(impact)) return false;
       if (population && normalizeStr(ex.population) !== normalizeStr(population)) return false;
@@ -302,7 +304,7 @@ export default function Exercises(props) {
             </div>
           ) : null}
 
-          <ExerciseList exercises={filtered} loading={false} error={null} />
+          <ExerciseList exercises={filtered} loading={loading} error={error} />
         </section>
       </main>
     </div>
