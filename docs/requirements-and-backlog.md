@@ -47,12 +47,44 @@ Mục tiêu: hoàn tất nhanh Phase 1 để “map” đầy đủ với `docs/
 
 -------------------------------------------------------------------------------
 
+**Modeling (Multi‑Group) — Khác biệt với Exercises**
+
+- Mục tiêu khác biệt: Trang Exercises thiên về browse/list & lọc đơn nhóm cơ hoặc theo type; Modeling cho phép “kết hợp nhiều nhóm cơ” để tìm các bài tập phù hợp một lúc (ví dụ: chest + triceps, back + biceps, legs + core...).
+- UX (đề xuất):
+  - Cho phép chọn nhiều nhóm cơ trên mô hình 3D (multi‑select). Hiển thị chip các nhóm đã chọn + nút “Xoá hết”.
+  - Chế độ kết hợp: `mode = all` (mặc định) = bài tập tác động tới TẤT CẢ nhóm cơ đã chọn; `mode = any` = bài tập chạm ÍT NHẤT 1 nhóm đã chọn.
+  - Tuỳ chọn “Ưu tiên Primary”: ưu tiên bài tập có các nhóm chọn nằm ở impact_level = primary; sau đó mới tới secondary.
+  - Sắp xếp: phổ biến (popularity_score), tên A‑Z, độ khó.
+- API (đề xuất):
+  - `GET /api/exercises/combination?groups=chest,triceps&mode=all&minImpact=secondary&page=1&pageSize=50`
+    - `groups`: danh sách slug hoặc alias (hỗ trợ parent/child như controller đang làm với muscle group).
+    - `mode`: `all|any` (mặc định `all`).
+    - `minImpact`: `primary|secondary` (lọc bài tập không thấp hơn mức này nếu muốn).
+    - Trả về shape giống các API exercises hiện tại: `{ id, name, description, difficulty, equipment, imageUrl, impact_level? }`.
+  - Triển khai SQL: dùng bảng `exercise_muscle_combinations` (đã có migration) với `muscle_group_ids_array` + GIN index:
+    - Với `mode=all`: `WHERE muscle_group_ids_array @> ARRAY[:selected_ids]` (exercise chứa mọi nhóm đã chọn).
+    - Với `mode=any`: `WHERE muscle_group_ids_array && ARRAY[:selected_ids]` (overlap ≥ 1).
+    - Parent semantics: map input parent slug → tập các child id; `selected_ids` là union mỗi parent→phạm vi chấp nhận. Khi `mode=all`, yêu cầu exercise phải chạm ít nhất 1 child của MỖI parent đã chọn (thực hiện với `EXISTS` per parent hoặc xây dựng tập điều kiện).
+- FE (đề xuất):
+  - Cập nhật `useModelingController` để quản lý `selectedMuscleGroups[]` thay vì một giá trị.
+  - Khi danh sách groups thay đổi, gọi endpoint `/api/exercises/combination` với `mode=all` mặc định; render 2 list “Primary” và “Secondary” theo impact_level gộp.
+  - UI toggle “All / Any” + “Ưu tiên Primary”.
+- Phase 1 (tối thiểu):
+  - Thêm endpoint `/api/exercises/combination` (parent‑level, `mode=all`).
+  - FE multi‑select nhóm cơ trong Modeling + hiển thị kết quả kết hợp (phân nhóm primary/secondary).
+- Phase 2 (nâng cao):
+  - Thêm `excludeGroups` (loại trừ), `complexity_score` hoặc “synergy score” để xếp hạng bài tập phù hợp combo.
+  - Gợi ý combo phổ biến (templates: PPL, Upper/Lower, Full Body + Core).
+
+-------------------------------------------------------------------------------
+
 **Phase 1 — Backlog “Map đủ” với fitnexus.md (ưu tiên triển khai nhanh)**
 
 - Free — Khám phá & Bài tập
   - [FE] Mô hình 3D tương tác → chọn nhóm cơ → render danh sách primary/secondary (đã có). Tiếp tục refine mapping tên nhóm cơ 3D → slug chuẩn.
   - [FE] Thư viện bài tập: lọc cơ bản, xem chi tiết (đã có). Giữ browse công khai.
   - [BE] API exercises theo nhóm cơ/type, trả impact_level (đã có). Xem lại sorting/paging cho ổn định.
+  - [Modeling khác biệt] Cho phép multi‑select nhóm cơ và gọi `/api/exercises/combination` (mode=all) để render bài tập đáp ứng đồng thời các nhóm đã chọn.
 
 - Free — Buổi tập hôm nay & Ghi log
   - [FE] Trang “Buổi tập hôm nay”: thêm/xoá bài tập; ghi set/reps/weight; hoàn tất buổi.
@@ -153,4 +185,3 @@ Acceptance tiêu chuẩn Phase 2
 -------------------------------------------------------------------------------
 
 Gợi ý tiến độ: 1) Workout logging + Progress cơ bản; 2) Landing + Dashboard Free; 3) Onboarding step còn thiếu; 4) Chuẩn bị Paywall/Stripe (đầu Phase 2).
-
