@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllExercises, getExercisesByMuscleGroup, getExerciseStepsById, getExerciseStepsBySlug } from "../controllers/exercise.controller.js";
+import { getAllExercises, getExercisesByMuscleGroup, getExerciseStepsById, getExerciseStepsBySlug, getExercisesByType } from "../controllers/exercise.controller.js";
 
 const router = Router();
 
@@ -8,6 +8,9 @@ router.get("/", getAllExercises);
 
 // Get exercises by muscle group
 router.get("/muscle/:muscleGroup", getExercisesByMuscleGroup);
+
+// Get exercises by type (compound | isolation | cardio | flexibility)
+router.get("/type/:type", getExercisesByType);
 
 // (Removed) multi-group combination endpoint — re-add when needed
 

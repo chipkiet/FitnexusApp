@@ -54,7 +54,10 @@ export default function useModelingController(options = {}) {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/api/exercises/muscle/${muscleGroup}`);
+      // Request a large pageSize so modeling lists have the full set
+      const response = await axios.get(`/api/exercises/muscle/${muscleGroup}`, {
+        params: { page: 1, pageSize: 1000 },
+      });
       if (response.data?.success) {
         const list = response.data.data || [];
         setExercises(list);
@@ -168,4 +171,3 @@ export default function useModelingController(options = {}) {
     formatGroupLabel,
   };
 }
-

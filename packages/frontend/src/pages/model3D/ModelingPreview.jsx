@@ -27,16 +27,29 @@ function ModelingPreview() {
     <div className="flex flex-col h-screen text-black">
       {/* Top bar */}
       <header className="flex items-center justify-between px-6 py-3 bg-white border-b">
-        <div className="text-base/6 text-zinc-950 dark:text-white hover:underline -m-1.5 p-1.5 shrink-0">
-          <img src={logo} alt="Fitnexus logo" className="h-24" />
-        </div>
-        <div className="flex items-center gap-3">
+        <button className="shrink-0" onClick={() => navigate("/")}>
+          <img src={logo} alt="logo" className="h-36" />
+        </button>
+        <div className="gap-3">
           <button
             onClick={() => navigate("/")}
             className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             Trang chủ
           </button>
+          <button
+            onClick={() => navigate("/exercises")}
+            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Thư viện bài tập
+          </button>
+          <button
+            onClick={() => navigate("/nutrition-ai")}
+            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Dinh dưỡng
+          </button>
+
           <button
             onClick={() => navigate("/login")}
             className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
@@ -52,7 +65,9 @@ function ModelingPreview() {
         <div className="w-2/5 p-4 border-r bg-gray-50">
           <div className="flex flex-col h-full">
             <div className="mb-3">
-              <h2 className="text-lg font-semibold text-gray-800">Xem thử mô hình 3D</h2>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Xem thử mô hình 3D
+              </h2>
               <p className="text-sm text-gray-600">
                 Khám phá mô hình 3D tương tác. Chọn nhóm cơ để xem bài tập.
               </p>
@@ -70,8 +85,13 @@ function ModelingPreview() {
           <div className="p-4 bg-white border-b">
             <div className="flex items-center gap-3">
               <div className="flex-1">
-                <label className="block mb-1 text-xs font-medium text-gray-700">Cấp độ</label>
-                <select disabled className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed">
+                <label className="block mb-1 text-xs font-medium text-gray-700">
+                  Cấp độ
+                </label>
+                <select
+                  disabled
+                  className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                >
                   <option value="all">Tất cả cấp độ</option>
                   <option value="beginner">Beginner</option>
                   <option value="intermediate">Intermediate</option>
@@ -79,16 +99,26 @@ function ModelingPreview() {
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block mb-1 text-xs font-medium text-gray-700">Tác động</label>
-                <select disabled className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed">
+                <label className="block mb-1 text-xs font-medium text-gray-700">
+                  Tác động
+                </label>
+                <select
+                  disabled
+                  className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                >
                   <option value="all">Primary & Secondary</option>
                   <option value="primary">Chỉ Primary</option>
                   <option value="secondary">Chỉ Secondary</option>
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block mb-1 text-xs font-medium text-gray-700">Sắp xếp</label>
-                <select disabled className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed">
+                <label className="block mb-1 text-xs font-medium text-gray-700">
+                  Sắp xếp
+                </label>
+                <select
+                  disabled
+                  className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
+                >
                   <option value="name">Tên A-Z</option>
                   <option value="popular">Phổ biến nhất</option>
                   <option value="level">Theo cấp độ</option>
@@ -103,7 +133,8 @@ function ModelingPreview() {
             {!selectedMuscleGroup && (
               <div className="flex items-center justify-center h-full text-center">
                 <div className="max-w-md text-sm text-gray-600">
-                  Chọn nhóm cơ trên mô hình 3D để xem danh sách bài tập (xem thử). Đăng nhập để trải nghiệm đầy đủ.
+                  Chọn nhóm cơ trên mô hình 3D để xem danh sách bài tập (xem
+                  thử). Đăng nhập để trải nghiệm đầy đủ.
                 </div>
               </div>
             )}
@@ -119,17 +150,35 @@ function ModelingPreview() {
                   <div className="text-left">
                     <div className="text-sm text-gray-500">
                       {isPanelOpen
-                        ? 'Thu gọn danh sách bài tập'
-                        : `Bạn muốn chọn nhóm cơ ${formatGroupLabel(selectedMuscleGroup)} này?`}
+                        ? "Thu gọn danh sách bài tập"
+                        : `Bạn muốn chọn nhóm cơ ${formatGroupLabel(
+                            selectedMuscleGroup
+                          )} này?`}
                     </div>
-                    <div className="text-lg font-semibold text-gray-800">{formatGroupLabel(selectedMuscleGroup)}</div>
+                    <div className="text-lg font-semibold text-gray-800">
+                      {formatGroupLabel(selectedMuscleGroup)}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     {isPanelOpen && (
-                      <span className="px-2 py-1 text-xs text-blue-700 rounded-full bg-blue-50">{exercises.length}</span>
+                      <span className="px-2 py-1 text-xs text-blue-700 rounded-full bg-blue-50">
+                        {exercises.length}
+                      </span>
                     )}
-                    <svg className={`w-5 h-5 text-gray-500 transition-transform ${isPanelOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <svg
+                      className={`w-5 h-5 text-gray-500 transition-transform ${
+                        isPanelOpen ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                 </button>
@@ -143,13 +192,31 @@ function ModelingPreview() {
                       className="flex items-center justify-between w-full p-4 transition bg-white rounded-lg shadow hover:shadow-md"
                     >
                       <div className="text-left">
-                        <div className="text-sm text-gray-500">Bài tập tác động chính</div>
-                        <div className="text-lg font-semibold text-gray-800">Primary</div>
+                        <div className="text-sm text-gray-500">
+                          Bài tập tác động chính
+                        </div>
+                        <div className="text-lg font-semibold text-gray-800">
+                          Primary
+                        </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="px-2 py-1 text-xs text-blue-700 rounded-full bg-blue-50">{primaryExercises.length}</span>
-                        <svg className={`w-5 h-5 text-gray-500 transition-transform ${isPrimaryOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <span className="px-2 py-1 text-xs text-blue-700 rounded-full bg-blue-50">
+                          {primaryExercises.length}
+                        </span>
+                        <svg
+                          className={`w-5 h-5 text-gray-500 transition-transform ${
+                            isPrimaryOpen ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
                         </svg>
                       </div>
                     </button>
@@ -171,18 +238,32 @@ function ModelingPreview() {
                     {isPrimaryOpen && !loading && !error && (
                       <div className="bg-white divide-y rounded-lg shadow">
                         {primaryExercises.length === 0 ? (
-                          <div className="p-4 text-gray-500">Không có bài tập phù hợp.</div>
+                          <div className="p-4 text-gray-500">
+                            Không có bài tập phù hợp.
+                          </div>
                         ) : (
                           primaryExercises.map((ex) => (
                             <button
                               key={ex.id}
                               type="button"
-                              onClick={() => navigate(`/exercises/${ex.id}`, { state: ex })}
+                              onClick={() =>
+                                navigate(`/exercises/${ex.id}`, { state: ex })
+                              }
                               className="flex items-center justify-between w-full p-4 text-left hover:bg-gray-50"
                             >
                               <span className="text-gray-800">{ex.name}</span>
-                              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              <svg
+                                className="w-4 h-4 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
                               </svg>
                             </button>
                           ))
@@ -197,13 +278,31 @@ function ModelingPreview() {
                       className="flex items-center justify-between w-full p-4 transition bg-white rounded-lg shadow hover:shadow-md"
                     >
                       <div className="text-left">
-                        <div className="text-sm text-gray-500">Bài tập hỗ trợ/phụ</div>
-                        <div className="text-lg font-semibold text-gray-800">Secondary</div>
+                        <div className="text-sm text-gray-500">
+                          Bài tập hỗ trợ/phụ
+                        </div>
+                        <div className="text-lg font-semibold text-gray-800">
+                          Secondary
+                        </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="px-2 py-1 text-xs text-blue-700 rounded-full bg-blue-50">{secondaryExercises.length}</span>
-                        <svg className={`w-5 h-5 text-gray-500 transition-transform ${isSecondaryOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <span className="px-2 py-1 text-xs text-blue-700 rounded-full bg-blue-50">
+                          {secondaryExercises.length}
+                        </span>
+                        <svg
+                          className={`w-5 h-5 text-gray-500 transition-transform ${
+                            isSecondaryOpen ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
                         </svg>
                       </div>
                     </button>
@@ -212,18 +311,32 @@ function ModelingPreview() {
                     {isSecondaryOpen && !loading && !error && (
                       <div className="bg-white divide-y rounded-lg shadow">
                         {secondaryExercises.length === 0 ? (
-                          <div className="p-4 text-gray-500">Không có bài tập phù hợp.</div>
+                          <div className="p-4 text-gray-500">
+                            Không có bài tập phù hợp.
+                          </div>
                         ) : (
                           secondaryExercises.map((ex) => (
                             <button
                               key={ex.id}
                               type="button"
-                              onClick={() => navigate(`/exercises/${ex.id}`, { state: ex })}
+                              onClick={() =>
+                                navigate(`/exercises/${ex.id}`, { state: ex })
+                              }
                               className="flex items-center justify-between w-full p-4 text-left hover:bg-gray-50"
                             >
                               <span className="text-gray-800">{ex.name}</span>
-                              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              <svg
+                                className="w-4 h-4 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
                               </svg>
                             </button>
                           ))

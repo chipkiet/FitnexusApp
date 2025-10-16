@@ -384,10 +384,10 @@ const Fitnexus3DLanding = () => {
       <section id="testimonials" className="px-6 py-32 bg-gray-900">
         <div className="mx-auto text-center max-w-7xl">
           <h2 className="mb-6 text-5xl font-bold md:text-6xl">
-            12,000+ người đang luyện tập mỗi tuần
+            PHÂN TÍCH THỰC PHẨM THÔNG MINH
           </h2>
           <p className="mb-20 text-xl text-gray-400">
-            Kết quả thực sự từ cộng đồng Fitnexus
+            Đưa ra những kết quả chính xác về dinh dưỡng của thực phẩm bạn muốn, lượng calories, lượng dinh dưỡng
           </p>
           <div className="grid gap-8 md:grid-cols-3">
             {[
