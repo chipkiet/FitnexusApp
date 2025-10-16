@@ -276,7 +276,7 @@ const Fitnexus3DLanding = () => {
 
           {/* CTA Below Laptop */}
           <div className="mt-16 text-center">
-            <button className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold transition rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:scale-105">
+            <button onClick={() => navigate("/login")} className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold transition rounded-full bg-gradient-to-r from-blue-500 to-purple-600 hover:scale-105">
               Khám phá ngay
               <ChevronRight size={24} />
             </button>

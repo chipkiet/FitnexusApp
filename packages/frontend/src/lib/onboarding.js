@@ -23,6 +23,7 @@ export async function submitOnboardingAnswer({
     try { markOnboarded?.(); } catch {}
     navigate("/", { replace: true });
   } else {
-    navigate(`/onboarding/${next}`, { replace: true });
+    // Đặt cờ để bỏ qua guard một lần sau submit nhằm tránh loop
+    navigate(`/onboarding/${next}`, { replace: true, state: { skipGuardOnce: true } });
   }
 }
