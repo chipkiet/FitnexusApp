@@ -57,19 +57,20 @@ export default function Exercises() {
       try {
         let res;
         if (!selectedGroup) {
-          // default list
+          // default list with pagination
           res = await axios.get('/api/exercises', { params: { page, pageSize } });
         } else if (selectedGroup === 'cardio') {
-          // cardio is an exercise type, not a muscle group
-          res = await axios.get('/api/exercises/type/cardio', { params: { page, pageSize } });
+          // exercise type; fetch full list (no pagination params)
+          res = await axios.get('/api/exercises/type/cardio');
         } else {
-          // fetch by muscle group (supports parent/child aliases on BE)
-          res = await axios.get(`/api/exercises/muscle/${selectedGroup}`, { params: { page, pageSize } });
+          // fetch by muscle group; return full list (no pagination params)
+          res = await axios.get(`/api/exercises/muscle/${selectedGroup}`);
         }
         if (isMounted) {
           if (res.data?.success) {
-            setRawExercises(res.data.data || []);
-            setTotal(res.data.total || 0);
+            const list = res.data.data || [];
+            setRawExercises(list);
+            setTotal(res.data.total ?? list.length ?? 0);
           } else {
             setError('Không thể tải danh sách bài tập');
           }
@@ -204,11 +205,11 @@ export default function Exercises() {
             <img src={logo} alt="logo" className="h-36" />
           </button>
           <nav className="items-center hidden gap-6 text-sm text-gray-700 md:flex">
+            <button onClick={() => navigate("/")} className="hover:underline">
+              Trang chủ
+            </button>
             <button onClick={() => navigate("/modeling-preview")} className="hover:underline">
               Mô hình hoá
-            </button>
-            <button onClick={() => navigate("/exercises")} className="hover:underline">
-              Thư viện tập
             </button>
             <button onClick={() => navigate("/nutrition-ai")} className="hover:underline">
               Dinh dưỡng
@@ -311,36 +312,38 @@ export default function Exercises() {
 
           <ExerciseList exercises={filtered} loading={loading} error={error} />
 
-          {/* Pagination controls */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-600">
-              Trang {page} / {Math.max(1, Math.ceil((total || 0) / pageSize))}
+          {/* Pagination controls: only for default list (no group selected) */}
+          {!selectedGroup && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-gray-600">
+                Trang {page} / {Math.max(1, Math.ceil((total || 0) / pageSize))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className={[
+                    "px-3 py-2 text-sm border rounded-lg",
+                    page <= 1 || loading ? "text-gray-400 border-gray-200" : "border-gray-300 hover:bg-gray-50"
+                  ].join(" ")}
+                >
+                  Trang trước
+                </button>
+                <button
+                  type="button"
+                  disabled={loading || page >= Math.max(1, Math.ceil((total || 0) / pageSize))}
+                  onClick={() => setPage((p) => p + 1)}
+                  className={[
+                    "px-3 py-2 text-sm border rounded-lg",
+                    loading || page >= Math.max(1, Math.ceil((total || 0) / pageSize)) ? "text-gray-400 border-gray-200" : "border-gray-300 hover:bg-gray-50"
+                  ].join(" ")}
+                >
+                  Trang sau
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={page <= 1 || loading}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className={[
-                  "px-3 py-2 text-sm border rounded-lg",
-                  page <= 1 || loading ? "text-gray-400 border-gray-200" : "border-gray-300 hover:bg-gray-50"
-                ].join(" ")}
-              >
-                Trang trước
-              </button>
-              <button
-                type="button"
-                disabled={loading || page >= Math.max(1, Math.ceil((total || 0) / pageSize))}
-                onClick={() => setPage((p) => p + 1)}
-                className={[
-                  "px-3 py-2 text-sm border rounded-lg",
-                  loading || page >= Math.max(1, Math.ceil((total || 0) / pageSize)) ? "text-gray-400 border-gray-200" : "border-gray-300 hover:bg-gray-50"
-                ].join(" ")}
-              >
-                Trang sau
-              </button>
-            </div>
-          </div>
+          )}
         </section>
       </main>
     </div>
