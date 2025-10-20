@@ -56,7 +56,7 @@ export default function AdminLayout() {
         label: "User Manage",
         children: [
           { icon: UserRound, label: "All Users", to: "/admin/users" },
-          { icon: IdCard, label: "Admin", to: "/admin/user-detail" },
+          { icon: IdCard, label: "User Detail", to: "/admin/user-detail" },
           { icon: IdCard, label: "Role", to: "/admin/role" }, // trang tách riêng
           { icon: IdCard, label: "Plan", to: "/admin/plan" }, // trang tách riêng
           { icon: Unlock, label: "Lock & Unlock", to: "/admin/lock-unlock" },
@@ -73,7 +73,7 @@ export default function AdminLayout() {
         key: "trainer",
         icon: Dumbbell,
         label: "Trainer Manage",
-        children: [{ label: "Overview", to: "/admin/trainers" }],
+        children: [{ label: "Overview", to: "/admin/trainer" }],
       },
       {
         key: "financial",

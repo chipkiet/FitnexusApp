@@ -1,19 +1,24 @@
 // App.jsx
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/auth.context.jsx";
 
-
+// Auth
 import Register from "./pages/authentication/Register.jsx";
 import Login from "./pages/authentication/Login.jsx";
 import ForgotPassword from "./pages/authentication/ForgotPassword.jsx";
 import VerifyCode from "./pages/authentication/VerifyCode.jsx";
 import ResetPassword from "./pages/authentication/ResetPassword.jsx";
+
+// Public / User
 import Landing from "./pages/landing/Landing.jsx";
 import Dashboard from "./pages/user/Dashboard.jsx";
-
-
-
 
 // Onboarding
 import OnboardingAge from "./pages/boardings/OnboardingAge.jsx";
@@ -26,11 +31,6 @@ import OnboardingExperience from "./pages/boardings/OnboardingExperience.jsx";
 import OnboardingFrequency from "./pages/boardings/OnboardingFrequency.jsx";
 import OnboardingEntry from "./pages/boardings/OnboardingEntry.jsx";
 
-
-
-
-
-
 // Admin
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import AdminOverview from "./pages/admin/Overview.jsx";
@@ -41,10 +41,8 @@ import Role from "./pages/admin/Role.jsx";
 import Plan from "./pages/admin/Plan.jsx";
 import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
-
-// (Optional) trang quản lý users nếu bạn có file này
-
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
+import VXPTrainerManage from "./pages/admin/TrainerManage/VXPTrainerManage.jsx";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -57,8 +55,6 @@ function PrivateRoute({ children }) {
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-
-
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -68,18 +64,14 @@ function AdminRoute({ children }) {
   return user.role === "ADMIN" ? children : <Navigate to="/" replace />;
 }
 
-
 function App() {
   useEffect(() => {
-
-    // Debug listener để xem FE có nhận message từ popup OAuth hay không
     const handler = (e) => {
       console.log("oauth msg:", e.origin, e.data);
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, []);
-
 
   return (
     <AuthProvider>
@@ -88,8 +80,13 @@ function App() {
           {/* Auth */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/onboarding" element={<OnboardingEntry />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-code" element={<VerifyCode />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* Onboarding */}
           <Route path="/onboarding" element={<Navigate to="/onboarding/age" replace />} />
+          <Route path="/onboarding/entry" element={<OnboardingEntry />} />
           <Route path="/onboarding/age" element={<OnboardingAge />} />
           <Route path="/onboarding/body_type" element={<OnboardingBody />} />
           <Route path="/onboarding/goal" element={<OnboardingGoal />} />
@@ -98,13 +95,8 @@ function App() {
           <Route path="/onboarding/level_body_fat" element={<OnboardingBodyFat />} />
           <Route path="/onboarding/experience_level" element={<OnboardingExperience />} />
           <Route path="/onboarding/workout_frequency" element={<OnboardingFrequency />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/verify-code" element={<VerifyCode />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
 
-
-          {/* Main app routes */}
-          {/* Public landing page at root shows Dashboard */}
+          {/* Public root */}
           <Route path="/" element={<Landing />} />
 
           {/* Authenticated dashboard */}
@@ -117,8 +109,7 @@ function App() {
             }
           />
 
-
-
+          {/* Admin area */}
           <Route
             path="/admin"
             element={
@@ -128,6 +119,7 @@ function App() {
             }
           >
             <Route index element={<AdminOverview />} />
+            <Route path="trainer" element={<VXPTrainerManage />} />
             <Route path="user-detail" element={<AdminUserDetail />} />
             <Route path="role" element={<Role />} />
             <Route path="plan" element={<Plan />} />
@@ -135,12 +127,10 @@ function App() {
             <Route path="reset-password" element={<AdminResetPassword />} />
             <Route path="content" element={<AdminContentManage />} />
             <Route path="finance" element={<AdminFinancialManage />} />
-            {/* Thêm route này nếu bạn dùng trang AdminUsers */}
             <Route path="users" element={<AdminUsers />} />
           </Route>
 
-
-          {/* Catch all */}
+          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
@@ -148,8 +138,4 @@ function App() {
   );
 }
 
-
 export default App;
-
-
-
