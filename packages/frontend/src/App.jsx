@@ -18,7 +18,14 @@ import ResetPassword from "./pages/authentication/ResetPassword.jsx";
 
 // Public / User
 import Landing from "./pages/landing/Landing.jsx";
+import NutritionAI from "./pages/nutrition/NutritionAI.jsx";
+import NutritionPersonalize from "./pages/nutrition/NutritionPersonalize.jsx";
 import Dashboard from "./pages/user/Dashboard.jsx";
+
+import Modeling from "./pages/model3D/Modeling.jsx";
+import ModelingPreview from "./pages/model3D/ModelingPreview.jsx";
+import ExerciseDetail from "./pages/exercises/ExerciseDetail.jsx";
+import Exercises from "./pages/exercises/Exercises.jsx";
 
 // Onboarding
 import OnboardingAge from "./pages/boardings/OnboardingAge.jsx";
@@ -98,8 +105,23 @@ function App() {
 
           {/* Public root */}
           <Route path="/" element={<Landing />} />
+          <Route path="/nutrition-ai" element={<NutritionAI />} />
+          <Route path="/nutrition-ai/personalize" element={<NutritionPersonalize />} />
+          {/* Public 3D modeling preview */}
+          <Route path="/modeling-preview" element={<ModelingPreview />} />
+          <Route path="/exercises" element={<Exercises/>}/>
 
-          {/* Authenticated dashboard */}
+          {/* Protected route: exercise detail (no MainLayout) */}
+          <Route
+            path="/exercises/:id"
+            element={
+              <PrivateRoute>
+                <ExerciseDetail />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Protected route without MainLayout (dashboard full control) */}
           <Route
             path="/dashboard"
             element={
@@ -109,7 +131,18 @@ function App() {
             }
           />
 
-          {/* Admin area */}
+          {/* Protected route without MainLayout (full control) */}
+          <Route
+            path="/modeling"
+            element={
+              <PrivateRoute>
+                <Modeling />
+              </PrivateRoute>
+            }
+          />
+
+
+
           <Route
             path="/admin"
             element={

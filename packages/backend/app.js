@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-dotenv.config();
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -13,7 +12,12 @@ import googleAuthRoutes from './routes/auth.js';   // Google OAuth
 import authRouter from './routes/auth.routes.js';
 import adminRouter from './routes/admin.routes.js';
 import trainerRouter from './routes/trainer.routes.js';
+import exerciseRouter from './routes/exercise.routes.js';
+
 import onboardingRouter from './routes/onboarding.routes.js';
+import nutritionRouter from './routes/nutrition.routes.js';
+
+dotenv.config();
 import activityTracker from "./middleware/activity.tracker.js";
 
 const app = express();
@@ -85,6 +89,7 @@ const authLimiter = rateLimit({
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/auth', googleAuthRoutes);
 app.use('/api/onboarding', onboardingRouter);
+app.use('/api/nutrition', nutritionRouter);
 
 // 🟢 Theo dõi hoạt động người dùng (cập nhật lastActiveAt)
 app.use("/api", activityTracker);
@@ -92,6 +97,8 @@ app.use("/api", activityTracker);
 // Sau middleware này, mọi request có token hợp lệ sẽ tự cập nhật lastActiveAt
 app.use('/api/admin', adminRouter);
 app.use('/api/trainer', trainerRouter);
+app.use('/api/onboarding', onboardingRouter);
+app.use('/api/exercises', exerciseRouter);
 
 /* -------------------- Health & Root -------------------- */
 app.get('/api/health', (_req, res) => {
