@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/auth.context.jsx";
 import axios from "axios";
 
 import logo from "../../assets/logo.png";
@@ -19,6 +20,13 @@ import ExerciseList from "../../components/ExerciseList.jsx";
 
 export default function Exercises() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   const muscleGroups = [
     { id: "abs", label: "Abs", icon: absIcon },
@@ -199,29 +207,108 @@ export default function Exercises() {
 
   return (
     <div className="min-h-screen text-black bg-white">
-      <header className="border-b border-gray-200">
-        <div className="flex items-center justify-between mx-auto max-w-7xl">
-          <button className="shrink-0" onClick={() => navigate("/")}> 
-            <img src={logo} alt="logo" className="h-36" />
+      <header className="border-b border-gray-200 shadow-sm">
+  <div className="flex items-center justify-between mx-auto max-w-7xl px-6 py-4">
+    <div className="flex items-center gap-2 shrink-0 -m-1.5 p-1.5">
+  <img src={logo} alt="Fitnexus logo" className="h-10" />
+  <span className="text-xl font-semibold text-gray-900 tracking-tight">
+    Fitnexus
+  </span>
+</div>
+
+    {/* Menu */}
+    <nav className="hidden md:flex items-center gap-6 text-sm text-gray-700">
+      <button
+        onClick={() => navigate("/dashboard")}
+        className="hover:text-blue-600 transition"
+      >
+        Trang chủ
+      </button>
+      <button
+        onClick={() => navigate("/modeling-preview")}
+        className="hover:text-blue-600 transition"
+      >
+        Mô hình hoá
+      </button>
+      <button
+        onClick={() => navigate("/nutrition-ai")}
+        className="hover:text-blue-600 transition"
+      >
+        Dinh dưỡng
+      </button>
+    </nav>
+
+    {/* Avatar / Login */}
+    <div className="flex items-center gap-4">
+      {user ? (
+        <div className="relative">
+          <button
+            onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+            className="rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium">
+              {user?.username?.[0]?.toUpperCase() || "U"}
+            </div>
           </button>
-          <nav className="items-center hidden gap-6 text-sm text-gray-700 md:flex">
-            <button onClick={() => navigate("/")} className="hover:underline">
-              Trang chủ
-            </button>
-            <button onClick={() => navigate("/modeling-preview")} className="hover:underline">
-              Mô hình hoá
-            </button>
-            <button onClick={() => navigate("/nutrition-ai")} className="hover:underline">
-              Dinh dưỡng
-            </button>
-          </nav>
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate("/login")} className="text-sm hover:underline">
-              Đăng nhập
-            </button>
-          </div>
+          {showAvatarMenu && (
+            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+              <button
+                onClick={() => {
+                  setShowAvatarMenu(false);
+                  navigate("/profile");
+                }}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+              >
+                Hồ sơ
+              </button>
+              <button
+                onClick={() => {
+                  setShowAvatarMenu(false);
+                  navigate("/settings");
+                }}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+              >
+                Cài đặt
+              </button>
+              <button
+                onClick={() => {
+                  setShowAvatarMenu(false);
+                  handleLogout();
+                }}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          )}
         </div>
-      </header>
+      ) : (
+        <button
+          onClick={() => navigate("/login")}
+          className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+        >
+          Đăng nhập
+        </button>
+      )}
+    </div>
+  </div>
+
+  {/* Overlay khi click ngoài menu avatar */}
+  {showAvatarMenu && (
+    <div
+      className="fixed inset-0 z-0"
+      onClick={() => setShowAvatarMenu(false)}
+    />
+  )}
+</header>
+
+      {/* Overlay to close avatar menu when clicking outside */}
+      {showAvatarMenu && (
+        <div
+          className="fixed inset-0 z-0"
+          onClick={() => setShowAvatarMenu(false)}
+        />
+      )}
 
       <main className="px-4 py-6 mx-auto max-w-7xl">
         <h1 className="mb-4 text-2xl font-semibold">Thư viện bài tập</h1>

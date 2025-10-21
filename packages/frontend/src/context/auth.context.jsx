@@ -53,11 +53,11 @@ export function AuthProvider({ children }) {
       if (d?.required && d?.nextStepKey) {
         navigate(`/onboarding/${d.nextStepKey}`, { replace: true });
       } else {
-        navigate("/", { replace: true });
+        navigate("/dashboard", { replace: true });
       }
     } catch {
-      // lỗi hiếm: cứ về Home
-      navigate("/", { replace: true });
+      // lỗi hiếm: cứ về Dashboard
+      navigate("/dashboard", { replace: true });
     }
   };
 
@@ -246,6 +246,21 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     setLoading(true);
     try {
+      // Try to logout from OAuth session if exists
+      try {
+        await api.post(endpoints.oauth.logout, {}, { withCredentials: true });
+      } catch (e) {
+        console.log('OAuth logout error:', e);
+      }
+      
+      // Try to logout from JWT session if exists
+      try {
+        await api.post(endpoints.auth.logout, {}, { withCredentials: true });
+      } catch (e) {
+        console.log('JWT logout error:', e);
+      }
+
+      // Clear client-side state
       setUser(null);
       clearAllTokens();
       // Optional: await api.post(endpoints.auth.logout);

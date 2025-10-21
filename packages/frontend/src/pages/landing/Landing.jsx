@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/auth.context.jsx";
 import logo from "../../assets/logo.png";
 // Muscle icons for library section
 import absIcon from "../../assets/body/coreIcon.svg";
@@ -20,9 +21,18 @@ import { Bounds, OrbitControls } from "@react-three/drei";
 
 const Fitnexus3DLanding = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [hoveredPart, setHoveredPart] = useState(null);
   const [controlsActive, setControlsActive] = useState(false);
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const canvasWrapRef = useRef(null);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
+  const displayName = (user?.username || "").replaceAll("_", " ");
 
   // Bam ESC de thoat dieu kien
   useEffect(() => {
@@ -68,51 +78,125 @@ const Fitnexus3DLanding = () => {
 
   return (
     <div className="min-h-screen text-black bg-white">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-10 backdrop-blur-xl bg-blend-saturation bg-bg-secondary/90">
-        <div className="flex items-center justify-between px-6 py-4 mx-auto max-w-7xl">
-          <div className="text-base/6 text-zinc-950 dark:text-white hover:underline -m-1.5 p-1.5 shrink-0">
-            <img src={logo} alt="Fitnexus logo" className="h-48" />
-          </div>
-          <nav className="hidden gap-8 md:flex">
-            <button
-              className="text-base/6 white:text-dark hover:underline text-text-primary"
-              onClick={() => navigate("/modeling-preview")}
-            >
-              Mô hình hoá
-            </button>
-            <button
-              className="text-base/6 dark:text-white hover:underline text-text-primary"
-              onClick={() => navigate("/exercises")}
-            >
-              Thư viện tập
-            </button>
-            <a
-              href="#testimonials"
-              className="text-base/6 dark:text-white hover:underline text-text-primary"
-            >
-              Dinh dưỡng
-            </a>
-            <a
-              href="#blog"
-              className="text-base/6 dark:text-white hover:underline text-text-primary"
-            >
-              Cộng đồng
-            </a>
-          </nav>
-          <div className="flex items-center gap-4">
-            <button
-              className="transition hover:text-blue-400"
-              onClick={() => navigate("/login")}
-            >
-              Đăng nhập
-            </button>
-            <button className="px-6 py-3 font-semibold text-black transition bg-white rounded-full hover:bg-gray-200">
-              Bắt đầu ngay
-            </button>
-          </div>
+{/* Header */}
+<header className="fixed top-0 left-0 right-0 z-10 backdrop-blur-xl bg-white/70 shadow-sm">
+  <div className="flex items-center justify-between px-8 py-4 mx-auto max-w-7xl">
+    {/* Logo */}
+    <button
+      onClick={() => navigate(user ? "/dashboard" : "/")}
+      className="flex items-center gap-2 text-base text-gray-900 font-semibold hover:opacity-80 transition"
+    >
+      <img src={logo} alt="Fitnexus logo" className="h-12" />
+      <span className="text-xl tracking-tight">Fitnexus</span>
+    </button>
+
+    {/* Navigation Menu */}
+    <nav className="flex items-center gap-8">
+      <button
+        className="text-base text-gray-800 hover:text-blue-500 transition"
+        onClick={() => navigate("/modeling-preview")}
+      >
+        Mô hình hoá
+      </button>
+      <button
+        className="text-base text-gray-800 hover:text-blue-500 transition"
+        onClick={() => navigate("/exercises")}
+      >
+        Thư viện tập
+      </button>
+      <a
+        href="#testimonials"
+        className="text-base text-gray-800 hover:text-blue-500 transition"
+      >
+        Dinh dưỡng
+      </a>
+      <a
+        href="#blog"
+        className="text-base text-gray-800 hover:text-blue-500 transition"
+      >
+        Cộng đồng
+      </a>
+    </nav>
+
+    {/* Avatar / Auth Buttons */}
+    <div className="flex items-center gap-4">
+      {user ? (
+        <div className="relative">
+          <button
+            onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+            className="rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium">
+              {user?.username?.[0]?.toUpperCase() || "U"}
+            </div>
+          </button>
+          {showAvatarMenu && (
+            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+              <button
+                onClick={() => {
+                  setShowAvatarMenu(false);
+                  navigate("/profile");
+                }}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+              >
+                Hồ sơ
+              </button>
+              <button
+                onClick={() => {
+                  setShowAvatarMenu(false);
+                  navigate("/settings");
+                }}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+              >
+                Cài đặt
+              </button>
+              <button
+                onClick={() => {
+                  setShowAvatarMenu(false);
+                  handleLogout();
+                }}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          )}
         </div>
-      </header>
+      ) : (
+        <>
+          <button
+            className="transition hover:text-blue-400"
+            onClick={() => navigate("/login")}
+          >
+            Đăng nhập
+          </button>
+          <button
+            className="px-6 py-3 font-semibold text-black transition bg-white rounded-full hover:bg-gray-200"
+            onClick={() => navigate("/login")}
+          >
+            Bắt đầu ngay
+          </button>
+        </>
+      )}
+    </div>
+  </div>
+
+  {/* Click outside to close avatar menu */}
+  {showAvatarMenu && (
+    <div
+      className="fixed inset-0 z-40"
+      onClick={() => setShowAvatarMenu(false)}
+    />
+  )}
+</header>
+
+      {/* Click outside to close avatar menu */}
+      {showAvatarMenu && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowAvatarMenu(false)}
+        />
+      )}
 
       {/* Hero Section - Freeletics Style */}
       <section className="relative flex items-center min-h-screen px-6 pt-32 pb-20 overflow-hidden">
@@ -146,7 +230,10 @@ const Fitnexus3DLanding = () => {
               Fitnexus kết hợp sức mạnh của AI và chuyên môn của các nhà khoa
               học thể thao để tạo ra kế hoạch luyện tập tốt nhất cho bạn.
             </p>
-            <button className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold text-black transition bg-white rounded-full hover:bg-gray-200 group">
+            <button 
+              className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold text-black transition bg-white rounded-full hover:bg-gray-200 group"
+              onClick={() => navigate("/register")}
+            >
               Nhận kế hoạch luyện tập cá nhân hóa
               <ChevronRight
                 className="transition-transform group-hover:translate-x-1"

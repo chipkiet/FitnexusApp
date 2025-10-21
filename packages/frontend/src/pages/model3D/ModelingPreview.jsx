@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/auth.context.jsx";
 import ModelViewer from "../../components/ModelViewer.jsx";
 import logo from "../../assets/logo.png";
 import useModelingController from "../../features/modeling/useModelingController.js";
 
 function ModelingPreview() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const {
     selectedMuscleGroup,
     exercises,
@@ -23,16 +26,27 @@ function ModelingPreview() {
     formatGroupLabel,
   } = useModelingController({ persistInURL: false });
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <div className="flex flex-col h-screen text-black">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-6 py-3 bg-white border-b">
-        <button className="shrink-0" onClick={() => navigate("/")}>
-          <img src={logo} alt="logo" className="h-36" />
-        </button>
-        <div className="gap-3">
+      <header className="flex items-center justify-between px-8 py-4 bg-white border-b shadow-sm">
+        {/* Logo */}
+<div className="flex items-center gap-2 shrink-0 -m-1.5 p-1.5">
+  <img src={logo} alt="Fitnexus logo" className="h-10" />
+  <span className="text-xl font-semibold text-gray-900 tracking-tight">
+    Fitnexus
+  </span>
+</div>
+
+        {/* Menu buttons */}
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/dashboard")}
             className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             Trang chủ
@@ -50,14 +64,68 @@ function ModelingPreview() {
             Dinh dưỡng
           </button>
 
-          <button
-            onClick={() => navigate("/login")}
-            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-          >
-            Đăng nhập để trải nghiệm đầy đủ
-          </button>
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+                className="rounded-full flex text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium">
+                  {user?.username?.[0]?.toUpperCase() || "U"}
+                </div>
+              </button>
+
+              {/* Avatar menu */}
+              {showAvatarMenu && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                  <button
+                    onClick={() => {
+                      setShowAvatarMenu(false);
+                      navigate("/profile");
+                    }}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                  >
+                    Hồ sơ
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAvatarMenu(false);
+                      navigate("/settings");
+                    }}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                  >
+                    Cài đặt
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAvatarMenu(false);
+                      handleLogout();
+                    }}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate("/login")}
+              className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+            >
+              Đăng nhập để trải nghiệm đầy đủ
+            </button>
+          )}
         </div>
       </header>
+
+      {/* Overlay to close avatar menu when clicking outside */}
+      {showAvatarMenu && (
+        <div
+          className="fixed inset-0 z-0"
+          onClick={() => setShowAvatarMenu(false)}
+        />
+      )}
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
