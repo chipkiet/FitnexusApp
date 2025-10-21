@@ -179,7 +179,6 @@ export default function Login() {
         },
         navigate
       );
-      // Redirect logic is handled in auth.context.jsx login function
     } catch (e) {
       // ⬇️ Nếu BE trả 423 Locked, mở modal kèm lý do
       const st = e?.response?.status;

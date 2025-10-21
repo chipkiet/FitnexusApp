@@ -14,7 +14,7 @@ import shouldersIcon from "../../assets/body/shouldersIcon.svg";
 import tricepsIcon from "../../assets/body/tricepsIcon.svg";
 import upperLegsIcon from "../../assets/body/upperLegsIcon.svg";
 import lowerLegsIcon from "../../assets/body/lowerLegsIcon.svg";
-import { Activity, Zap, Target, Star, ChevronRight, Play } from "lucide-react";
+import { Target, Star, ChevronRight, Play } from "lucide-react";
 import { Canvas } from "@react-three/fiber";
 import { HumanModel } from "../../components/3d/HumanModel";
 import { Bounds, OrbitControls } from "@react-three/drei";
@@ -26,6 +26,51 @@ const Fitnexus3DLanding = () => {
   const [controlsActive, setControlsActive] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const canvasWrapRef = useRef(null);
+  const isAuthenticated = !!user;
+
+  // Dropdown state for Workout (Exercises + Plans)
+  const [showWorkoutDropdown, setShowWorkoutDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowWorkoutDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleStartOnboarding = async () => {
+    // Require authentication for onboarding. If not authenticated, redirect to login
+    if (!isAuthenticated()) {
+      // pass the original destination so Login can redirect back after success
+      navigate("/login", { state: { from: "/onboarding/age" } });
+      return;
+    }
+
+    try {
+      // Check current onboarding session and navigate accordingly
+      const response = await api.get("/api/onboarding/session", {
+        params: { t: Date.now() },
+        headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+        withCredentials: true,
+      });
+
+      const data = response?.data?.data || {};
+      if (data.required && !data.completed) {
+        const nextStep = String(data.nextStepKey || data.currentStepKey || "age").toLowerCase();
+        navigate(`/onboarding/${nextStep}`);
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error starting onboarding:", error);
+      navigate("/onboarding/age");
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -115,6 +160,7 @@ const Fitnexus3DLanding = () => {
         className="text-base text-gray-800 hover:text-blue-500 transition"
       >
         Cộng đồng
+
       </a>
     </nav>
 
@@ -231,14 +277,11 @@ const Fitnexus3DLanding = () => {
               học thể thao để tạo ra kế hoạch luyện tập tốt nhất cho bạn.
             </p>
             <button 
+              onClick={handleStartOnboarding}
               className="inline-flex items-center gap-3 px-10 py-5 text-lg font-semibold text-black transition bg-white rounded-full hover:bg-gray-200 group"
-              onClick={() => navigate("/register")}
             >
               Nhận kế hoạch luyện tập cá nhân hóa
-              <ChevronRight
-                className="transition-transform group-hover:translate-x-1"
-                size={24}
-              />
+              <ChevronRight className="transition-transform group-hover:translate-x-1" size={24} />
             </button>
 
             {/* Feature Pills */}
