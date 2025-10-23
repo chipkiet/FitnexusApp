@@ -4,7 +4,7 @@ import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl";
 import * as mobilenet from "@tensorflow-models/mobilenet";
 import "./NutritionAI.css";
-import HeaderDemo from "../../components/header/HeaderDemo.jsx";
+import Navbar from "../../components/common/Navbar.jsx";
 
 function centerCropToSquare(imgEl, size = 224) {
   const s = Math.min(imgEl.naturalWidth, imgEl.naturalHeight);
@@ -112,7 +112,7 @@ export default function FoodCalorie() {
             cache: "no-store",
           });
           if (r.ok) macros = await r.json();
-        } catch {}
+        } catch { }
         models.net = net;
         models.clf = clf;
         setLabels(lbs);
@@ -138,7 +138,7 @@ export default function FoodCalorie() {
     return () => {
       try {
         models.clf?.dispose();
-      } catch {}
+      } catch { }
     };
   }, [models]);
 
@@ -242,23 +242,23 @@ export default function FoodCalorie() {
     const kcal100FromMacros =
       per100By.protein || per100By.carbs || per100By.fat || per100By.alcohol
         ? (per100By.protein || 0) * 4 +
-          (per100By.carbs || 0) * 4 +
-          (per100By.fat || 0) * 9 +
-          (per100By.alcohol || 0) * 7
+        (per100By.carbs || 0) * 4 +
+        (per100By.fat || 0) * 9 +
+        (per100By.alcohol || 0) * 7
         : null;
     const kcal100Effective = Number.isFinite(kcal100Field)
       ? kcal100Field
       : Number.isFinite(kcal100FromMacros)
-      ? Math.round(kcal100FromMacros)
-      : null;
+        ? Math.round(kcal100FromMacros)
+        : null;
     const pct =
       kcalFromMacros > 0
         ? {
-            p: +((pKcal / kcalFromMacros) * 100).toFixed(0),
-            c: +((cKcal / kcalFromMacros) * 100).toFixed(0),
-            f: +((fKcal / kcalFromMacros) * 100).toFixed(0),
-            a: +((aKcal / kcalFromMacros) * 100).toFixed(0),
-          }
+          p: +((pKcal / kcalFromMacros) * 100).toFixed(0),
+          c: +((cKcal / kcalFromMacros) * 100).toFixed(0),
+          f: +((fKcal / kcalFromMacros) * 100).toFixed(0),
+          a: +((aKcal / kcalFromMacros) * 100).toFixed(0),
+        }
         : { p: 0, c: 0, f: 0, a: 0 };
 
     const order = ["protein", "carbs", "fat", "alcohol"];
@@ -380,63 +380,38 @@ export default function FoodCalorie() {
 
   return (
     <div className="fc-page">
+      <Navbar />
 
-      <div>
-        <HeaderDemo/>
-      </div>
+      {/* Hidden global file input */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        onChange={onPickFile}
+        hidden
+        disabled={!ready}
+      />
 
-      <div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          onChange={onPickFile}
-          hidden
-          disabled={!ready}
-        />
-
-        {/* Main content */}
-        <main className="fc-container">
-          {!previewUrl ? (
-            <section className="fc-hero">
-              <div className="fc-card">
-                <div className="fc-hero-inner">
-                  <h1 className="fc-hero-title">
-                    Nhận diện món ăn & Tính calo tức thì
-                  </h1>
-                  <p className="fc-hero-sub">
-                    Bạn không biết món ăn này có bao nhiêu calo? Đừng lo, AI
-                    Nutrition của FITNEXUS sẽ giúp bạn!
-                  </p>
-                  <div className="fc-hero-cta">
-                    <button
-                      className="fc-btn-primary"
-                      onClick={() => fileRef.current?.click()}
-                      disabled={!ready}
-                    >
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <ImagePlus size={18} /> Chọn ảnh món ăn
-                      </span>
-                    </button>
-                    <button
-                      className="fc-btn-secondary"
-                      style={{ marginLeft: 12 }}
-                      onClick={() =>
-                        (window.location.href = "/nutrition-ai/personalize")
-                      }
-                    >
-                      Cá nhân hoá dinh dưỡng
-                    </button>
-                  </div>
-                  {!ready && !error && (
-                    <div
-                      className="fc-loading"
+      {/* Main content */}
+      <main className="fc-container">
+        {!previewUrl ? (
+          <section className="fc-hero">
+            <div className="fc-card">
+              <div className="fc-hero-inner">
+                <h1 className="fc-hero-title">
+                  Nhận diện món ăn & Tính calo tức thì
+                </h1>
+                <p className="fc-hero-sub">
+                  Bạn không biết món ăn này có bao nhiêu calo? Đừng lo, AI
+                  Nutrition của FITNEXUS sẽ giúp bạn!
+                </p>
+                <div className="fc-hero-cta">
+                  <button
+                    className="fc-btn-primary"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={!ready}
+                  >
+                    <span
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -480,15 +455,33 @@ export default function FoodCalorie() {
                   {error && <div className="fc-error">{error}</div>}
                 </div>
               </div>
-            </section>
-          ) : (
-            <section className="fc-scanner">
-              <div className="fc-card">
-                <div className="fc-scanner-header">
-                  <h3 className="fc-scanner-title">Kết quả phân tích</h3>
-                  <p className="fc-scanner-sub">
-                    Thông tin dinh dưỡng ước tính từ AI
-                  </p>
+            </div>
+          </section>
+        ) : (
+          <section className="fc-scanner">
+
+            <div className="fc-card">
+              <div className="fc-scanner-header">
+                <h3 className="fc-scanner-title">Kết quả phân tích</h3>
+                <p className="fc-scanner-sub">
+                  Thông tin dinh dưỡng ước tính từ AI
+                </p>
+              </div>
+
+              <div className="fc-grid">
+                <div className="fc-col">
+                  <div className="fc-preview">
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        alt="preview"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="fc-placeholder">Chưa có ảnh</div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="fc-grid">
@@ -507,34 +500,58 @@ export default function FoodCalorie() {
                     </div>
                   </div>
 
-                  <div className="fc-col">
-                    <label className="fc-label">Thiết lập khẩu phần</label>
-                    <div className="fc-controls">
-                      <input
-                        className="fc-input"
-                        ref={gramsRef}
-                        type="number"
-                        placeholder="Khối lượng (gram) – tuỳ chọn"
-                        onChange={() => recalcFromControls(result)}
-                      />
-                      <select
-                        className="fc-select"
-                        ref={sizeRef}
-                        defaultValue=""
-                        onChange={() => recalcFromControls(result)}
-                      >
-                        <option value="">Kích cỡ khẩu phần</option>
-                        <option value="s">Nhỏ (S)</option>
-                        <option value="m">Vừa (M)</option>
-                        <option value="l">Lớn (L)</option>
-                      </select>
-                      <button
-                        className="fc-btn-secondary"
-                        onClick={() => fileRef.current?.click()}
-                        disabled={!ready}
-                      >
-                        Chọn/đổi ảnh
-                      </button>
+                  {result && (
+                    <div className="fc-result" aria-live="polite">
+                      <div className="fc-row">
+                        <span className="fc-key">Món ăn:</span>
+                        <span className="fc-val">{result.dish}</span>
+                      </div>
+                      <div className="fc-row">
+                        <span className="fc-key">Khối lượng:</span>
+                        <span className="fc-val">{result.grams} g</span>
+                      </div>
+                      <div className="fc-row">
+                        <span className="fc-key">Calo / 100g:</span>
+                        <span className="fc-val">{result.kcal100}</span>
+                      </div>
+                      <div className="fc-total">Tổng: {result.total} kcal</div>
+                      <div className="fc-top3">
+                        {result.top3.map((t, idx) => {
+                          const active = result.dish === t.dish;
+                          const cls = `fc-chip clickable${active ? " active" : ""
+                            }`;
+                          return (
+                            <span
+                              key={idx}
+                              className={cls}
+                              role="button"
+                              tabIndex={0}
+                              aria-pressed={active}
+                              title="Xem dinh dưỡng món này"
+                              onClick={() => showDishInfo(t.dish, t.confidence)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  showDishInfo(t.dish, t.confidence);
+                                }
+                              }}
+                            >
+                              {t.dish} {(t.confidence * 100).toFixed(1)}%
+                            </span>
+
+
+                          );
+                        })}
+                        <button
+                          className="fc-btn-secondary"
+                          style={{ marginLeft: 12 }}
+                          onClick={() =>
+                            (window.location.href = "/nutrition-ai/personalize")
+                          }
+                        >
+                          Cá nhân hoá dinh dưỡng
+                        </button>
+                      </div>
                     </div>
 
                     {result && (
@@ -547,39 +564,34 @@ export default function FoodCalorie() {
                           <span className="fc-key">Khối lượng:</span>
                           <span className="fc-val">{result.grams} g</span>
                         </div>
-                        <div className="fc-row">
-                          <span className="fc-key">Calo / 100g:</span>
-                          <span className="fc-val">{result.kcal100}</span>
-                        </div>
-                        <div className="fc-total">
-                          Tổng: {result.total} kcal
-                        </div>
-                        <div className="fc-top3">
-                          {result.top3.map((t, idx) => {
-                            const active = result.dish === t.dish;
-                            const cls = `fc-chip clickable${
-                              active ? " active" : ""
-                            }`;
+                        <div className="fc-macro-rows">
+                          {result.macros.details.map((it) => {
+                            const pctBadge =
+                              it.id === "protein"
+                                ? result.macros.pct.p
+                                : it.id === "carbs"
+                                  ? result.macros.pct.c
+                                  : it.id === "fat"
+                                    ? result.macros.pct.f
+                                    : it.id === "alcohol"
+                                      ? result.macros.pct.a
+                                      : null;
                             return (
-                              <span
-                                key={idx}
-                                className={cls}
-                                role="button"
-                                tabIndex={0}
-                                aria-pressed={active}
-                                title="Xem dinh dưỡng món này"
-                                onClick={() =>
-                                  showDishInfo(t.dish, t.confidence)
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    showDishInfo(t.dish, t.confidence);
-                                  }
-                                }}
-                              >
-                                {t.dish} {(t.confidence * 100).toFixed(1)}%
-                              </span>
+                              <div key={it.id} className="fc-macro-row">
+                                <div className="fc-macro-name">{it.name}</div>
+                                <div className="fc-macro-val">
+                                  {it.value} {it.unit}
+                                  {pctBadge !== null &&
+                                    pctBadge !== undefined ? (
+                                    <>
+                                      {" "}
+                                      <span className="fc-badge">
+                                        {pctBadge}%
+                                      </span>
+                                    </>
+                                  ) : null}
+                                </div>
+                              </div>
                             );
                           })}
                         </div>

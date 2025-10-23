@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/logo.png";
-
+import api from "../../lib/api";
+// Muscle icons for library section
 import absIcon from "../../assets/body/coreIcon.svg";
 import backIcon from "../../assets/body/backIcon.svg";
 import bicepsIcon from "../../assets/body/bicepsIcon.svg";
@@ -24,7 +25,23 @@ const Fitnexus3DLanding = () => {
   const navigate = useNavigate();
   const [controlsActive, setControlsActive] = useState(false);
   const canvasWrapRef = useRef(null);
-  
+  const { user } = useAuth();
+  const isAuthenticated = () => !!user;
+
+  // Dropdown state for Workout (Exercises + Plans)
+  const [showWorkoutDropdown, setShowWorkoutDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowWorkoutDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleStartOnboarding = async () => {
     if (!isAuthenticated()) {
@@ -33,6 +50,8 @@ const Fitnexus3DLanding = () => {
     }
 
     try {
+      console.log("[Landing] Fetching onboarding session...");
+      // Check current onboarding session and navigate accordingly
       const response = await api.get("/api/onboarding/session", {
         params: { t: Date.now() },
         headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
@@ -40,6 +59,16 @@ const Fitnexus3DLanding = () => {
       });
 
       const data = response?.data?.data || {};
+      if (response?.status === 200 && response?.data?.success) {
+        console.log("[Landing] /api/onboarding/session OK", {
+          required: data.required,
+          completed: data.completed,
+          sessionId: data.sessionId || null,
+          nextStepKey: data.nextStepKey || data.currentStepKey || null,
+        });
+      } else {
+        console.warn("[Landing] /api/onboarding/session unexpected response", response?.status, response?.data);
+      }
       if (data.required && !data.completed) {
         const nextStep = String(
           data.nextStepKey || data.currentStepKey || "age"
@@ -49,7 +78,11 @@ const Fitnexus3DLanding = () => {
         navigate("/dashboard");
       }
     } catch (error) {
-      console.error("Error starting onboarding:", error);
+      console.error("[Landing] Error calling /api/onboarding/session", {
+        message: error?.message,
+        status: error?.response?.status,
+        body: error?.response?.data,
+      });
       navigate("/onboarding/age");
     }
   };
@@ -97,6 +130,36 @@ const Fitnexus3DLanding = () => {
     <div className="min-h-screen text-black bg-white">
       <HeaderDemo/>
 
+            <button
+              type="button"
+              onClick={() => navigate("/nutrition-ai")}
+              className="text-base text-gray-800 transition hover:text-blue-500"
+            >
+              Khám phá Nutrition AI
+            </button>
+            <a
+              href="#blog"
+              className="text-base text-gray-800 transition hover:text-blue-500"
+            >
+              Cộng đồng
+            </a>
+          </nav>
+          <div className="flex items-center gap-4">
+            <button
+              className="font-extrabold text-gray-700 transition text-pretty hover:text-blue-600"
+              onClick={() => navigate("/login")}
+            >
+              Đăng nhập
+            </button> */}
+            <button className="px-6 py-2.5 font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-full hover:shadow-lg transition"
+            onClick={() => navigate("/login")}>
+              Bắt đầu ngay
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section - Freeletics Style */}
       <section className="relative flex items-center min-h-screen px-6 pt-32 pb-20 overflow-hidden">
         {/* Video Background */}
         <div className="absolute inset-0 z-0">
