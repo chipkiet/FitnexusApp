@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "fetch-mobilenet": "node ./scripts/fetch-tfjs-model.mjs https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v2_1.0_224 ./public/model/mobilenet_v2_1.0_224",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "test": "vitest run --reporter=default",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",
@@ -25,9 +27,7 @@
     "react-dom": "^19.1.1",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.1",
-    "three": "^0.180.0",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
@@ -40,6 +40,12 @@
     "globals": "^16.3.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@testing-library/jest-dom": "^6.6.3",
+    "vitest": "^2.1.4",
+    "jsdom": "^24.1.3",
+    "msw": "^2.6.8"
   }
 }

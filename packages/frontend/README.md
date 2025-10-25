@@ -1,4 +1,16 @@
-# React + TypeScript + Vite
+# Frontend (Vite + React)
+
+## Testing
+
+- Install deps: `npm install` (from repo root or `packages/frontend`)
+- Run all tests: `npm run test` (in `packages/frontend`)
+- Watch mode: `npm run test:watch`
+
+Stack: Vitest + React Testing Library + MSW (API mocking).
+
+---
+
+Below is the original Vite template guidance:
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

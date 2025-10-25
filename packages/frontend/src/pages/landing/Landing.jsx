@@ -19,7 +19,7 @@ import { Canvas } from "@react-three/fiber";
 import { HumanModel } from "../../components/3d/HumanModel";
 import { Bounds, OrbitControls } from "@react-three/drei";
 import HeaderDemo from "../../components/header/HeaderDemo.jsx";
-import api from "../../lib/api";
+import { useAuth } from "../../context/auth.context.jsx";
 
 const Fitnexus3DLanding = () => {
   const navigate = useNavigate();
@@ -129,35 +129,6 @@ const Fitnexus3DLanding = () => {
   return (
     <div className="min-h-screen text-black bg-white">
       <HeaderDemo/>
-
-            <button
-              type="button"
-              onClick={() => navigate("/nutrition-ai")}
-              className="text-base text-gray-800 transition hover:text-blue-500"
-            >
-              Khám phá Nutrition AI
-            </button>
-            <a
-              href="#blog"
-              className="text-base text-gray-800 transition hover:text-blue-500"
-            >
-              Cộng đồng
-            </a>
-          </nav>
-          <div className="flex items-center gap-4">
-            <button
-              className="font-extrabold text-gray-700 transition text-pretty hover:text-blue-600"
-              onClick={() => navigate("/login")}
-            >
-              Đăng nhập
-            </button> */}
-            <button className="px-6 py-2.5 font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-full hover:shadow-lg transition"
-            onClick={() => navigate("/login")}>
-              Bắt đầu ngay
-            </button>
-          </div>
-        </div>
-      </header>
 
       {/* Hero Section - Freeletics Style */}
       <section className="relative flex items-center min-h-screen px-6 pt-32 pb-20 overflow-hidden">
