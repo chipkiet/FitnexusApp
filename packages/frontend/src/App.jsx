@@ -24,7 +24,12 @@ import PlanPicker from "./pages/plans/PlanPicker.jsx";
 import PlanDetail from "./pages/plans/PlanDetail.jsx";
 import Logout from "./pages/authentication/Logout.jsx";
 import NotFoundRedirect from "./pages/system/NotFoundRedirect.jsx";
+<<<<<<< HEAD
 // Removed imports for non-existent pages
+=======
+import WorkoutRun from "./pages/workout/WorkoutRun.jsx";
+import AdminPlanDetail from "./pages/admin/AdminPlanDetail.jsx";
+>>>>>>> 676fb794bacf255921db750e0714dfa5bd2d78e6
 // Onboarding
 import OnboardingAge from "./pages/boardings/OnboardingAge.jsx";
 import OnboardingBody from "./pages/boardings/OnboardingBody.jsx";
@@ -47,11 +52,20 @@ import Role from "./pages/admin/Role.jsx";
 import Plan from "./pages/admin/Plan.jsx";
 import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
+<<<<<<< HEAD
 // Removed obsolete admin plan pages
 
 
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
 // Removed obsolete admin popular exercises page
+=======
+import AdminUserPlans from "./pages/admin/UserPlans.jsx";
+import UserPlanDetails from "./pages/admin/UserPlanDetails.jsx";
+
+
+import AdminUsers from "./pages/admin/AdminUsers.jsx";
+import AdminPopularExercises from "./pages/admin/PopularExercises.jsx";
+>>>>>>> 676fb794bacf255921db750e0714dfa5bd2d78e6
 
 // Account pages
 import PersonalInfo from "./pages/account/PersonalInfo.jsx";
@@ -185,6 +199,15 @@ function App() {
           
 
           <Route
+            path="/workout-run/:sessionId"
+            element={
+              <PrivateRoute>
+                <WorkoutRun />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
             path="/dashboard"
             element={
               <PrivateRoute>
@@ -288,7 +311,14 @@ function App() {
             <Route path="reset-password" element={<AdminResetPassword />} />
             <Route path="content" element={<AdminContentManage />} />
             <Route path="finance" element={<AdminFinancialManage />} />
+<<<<<<< HEAD
             
+=======
+            <Route path="popular-exercises" element={<AdminPopularExercises />} />
+            <Route path="user-plans" element={<AdminUserPlans />} />
+            <Route path="user-plans/:userId" element={<UserPlanDetails />} />
+<Route path="user-plans/:userId/plan/:planId" element={<AdminPlanDetail />} />
+>>>>>>> 676fb794bacf255921db750e0714dfa5bd2d78e6
 
             {/* Thêm route này nếu bạn dùng trang AdminUsers */}
             <Route path="users" element={<AdminUsers />} />
