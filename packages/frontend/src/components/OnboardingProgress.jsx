@@ -9,7 +9,7 @@ export default function OnboardingProgress({ currentKey }) {
   return (
     <div className="mt-4 flex items-center gap-3">
       <div className="text-xs font-medium text-blue-600">
-        Bước {stepNum}/{total}
+        Buoc {stepNum}/{total}
       </div>
       <div className="h-1 flex-1 bg-gray-200 rounded-full overflow-hidden">
         <div

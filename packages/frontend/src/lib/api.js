@@ -58,6 +58,9 @@ export const endpoints = {
   nutrition: {
     plan: "/api/nutrition/plan",
   },
+  leaderboards: {
+    week: "/api/leaderboards",
+  },
 
   admin: {
     users: "/api/admin/users",

@@ -268,19 +268,6 @@ export default function HeaderLogin() {
                 </button>
                 {showAvatarMenu && (
                   <div className="absolute right-0 z-50 w-64 mt-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                    {/* Tài khoản */}
-                    {false && (
-                    <button
-                      onClick={() => {
-                        setShowAvatarMenu(false);
-                        setActiveSubmenu(null);
-                        navigate("/profile");
-                      }}
-                      className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
-                    >
-                      Hồ sơ
-                    </button>
-                    )}
                     {/* Account, Profile, Support submenus */}
                     <div className="relative">
                       <button
@@ -326,7 +313,7 @@ export default function HeaderLogin() {
                       )}
                     </div>
 
-                    {/* Hồ sơ */}
+                    {/* Profile */}
                     <div className="relative">
                       <button
                         onClick={() => setActiveSubmenu(activeSubmenu === 'profile' ? null : 'profile')}
@@ -361,13 +348,71 @@ export default function HeaderLogin() {
                       )}
                     </div>
 
-                    {/* Support → direct navigate */}
-                    <button
-                      onClick={() => { setShowAvatarMenu(false); setActiveSubmenu(null); navigate("/support/faq"); }}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Hỗ trợ
-                    </button>
+                    {/* Support */}
+                    <div className="relative">
+                      <button
+                        onClick={() => { setShowAvatarMenu(false); setActiveSubmenu(null); navigate("/support/faq"); }}
+                        className="flex items-center justify-between w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                      >
+                        <span>Hỗ trợ</span>
+                        <svg
+                          className={`w-4 h-4 transition-transform ${activeSubmenu === 'support' ? 'rotate-180' : ''}`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+                      {false && (
+                        <div className="absolute left-full top-0 w-48 ml-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                          <button
+                            onClick={() => {
+                              setShowAvatarMenu(false);
+                              setActiveSubmenu(null);
+                              navigate("/support/faq");
+                            }}
+                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                          >
+                            FAQ
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowAvatarMenu(false);
+                              setActiveSubmenu(null);
+                              navigate("/support/contact");
+                            }}
+                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                          >
+                            Liên hệ
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowAvatarMenu(false);
+                              setActiveSubmenu(null);
+                              navigate("/support/bug-report");
+                            }}
+                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                          >
+                            Báo lỗi
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowAvatarMenu(false);
+                              setActiveSubmenu(null);
+                              navigate("/support/guide");
+                            }}
+                            className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                          >
+                            Hướng dẫn sử dụng
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Settings */}
                     <div className="relative">
                       <button

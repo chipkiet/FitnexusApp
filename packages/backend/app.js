@@ -19,6 +19,7 @@ import planRouter from './routes/plan.routes.js';
 import usersRouter from './routes/users.routes.js';
 
 import onboardingRouter from './routes/onboarding.routes.js';
+import leaderboardRouter from './routes/leaderboard.routes.js';
 import nutritionRouter from './routes/nutrition.routes.js';
 
 dotenv.config();
@@ -94,6 +95,7 @@ app.use('/api/auth', authLimiter, authRouter);
 app.use('/auth', googleAuthRoutes);
 app.use('/api/onboarding', onboardingRouter);
 app.use('/api/nutrition', nutritionRouter);
+app.use('/api/leaderboards', leaderboardRouter);
 
 // Theo dõi hoạt động người dùng (cập nhật lastActiveAt)
 app.use("/api", activityTracker);

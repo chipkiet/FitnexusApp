@@ -24,7 +24,7 @@ import PlanPicker from "./pages/plans/PlanPicker.jsx";
 import PlanDetail from "./pages/plans/PlanDetail.jsx";
 import Logout from "./pages/authentication/Logout.jsx";
 import NotFoundRedirect from "./pages/system/NotFoundRedirect.jsx";
-
+// Removed imports for non-existent pages
 // Onboarding
 import OnboardingAge from "./pages/boardings/OnboardingAge.jsx";
 import OnboardingBody from "./pages/boardings/OnboardingBody.jsx";
@@ -47,9 +47,11 @@ import Role from "./pages/admin/Role.jsx";
 import Plan from "./pages/admin/Plan.jsx";
 import AdminLockUnlock from "./pages/admin/LockUnlock.jsx";
 import AdminResetPassword from "./pages/admin/ResetPassword.jsx";
+// Removed obsolete admin plan pages
 
 
 import AdminUsers from "./pages/admin/AdminUsers.jsx";
+// Removed obsolete admin popular exercises page
 
 // Account pages
 import PersonalInfo from "./pages/account/PersonalInfo.jsx";
@@ -147,14 +149,7 @@ function App() {
             }
           />
           <Route path="/logout" element={<Logout />} />
-          <Route
-            path="/plans/select"
-            element={
-              <PrivateRoute>
-                <PlanPicker />
-              </PrivateRoute>
-            }
-          />
+          
           <Route
             path="/plans/:planId"
             element={
@@ -186,6 +181,8 @@ function App() {
                 <ExerciseDetail />             
             }
           />
+
+          
 
           <Route
             path="/dashboard"
@@ -291,6 +288,8 @@ function App() {
             <Route path="reset-password" element={<AdminResetPassword />} />
             <Route path="content" element={<AdminContentManage />} />
             <Route path="finance" element={<AdminFinancialManage />} />
+            
+
             {/* Thêm route này nếu bạn dùng trang AdminUsers */}
             <Route path="users" element={<AdminUsers />} />
           </Route>
