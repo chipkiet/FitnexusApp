@@ -8,8 +8,28 @@ import { Crown } from "lucide-react";
 
 export default function HeaderLogin() {
   const navigate = useNavigate();
+  
+
   const location = useLocation();
   const { user, logout } = useAuth();
+  const secureNavigate = (path) => {
+  const isLoggedIn = !!user; // check bằng useAuth()
+
+  const protectedRoutes = [
+    "/nutrition-ai",
+    "/plans/select",
+    "/plans/new",
+    "/community",
+
+  ];
+
+  if (!isLoggedIn && protectedRoutes.includes(path)) {
+    navigate("/login", { state: { from: path } });
+    return;
+  }
+
+  navigate(path);
+};
   const { isDark } = useTheme();
   const isAuthenticated = !!user;
 
@@ -153,7 +173,7 @@ export default function HeaderLogin() {
 
           <div className="relative" ref={workoutRef}>
             <button
-              onClick={() => setOpenWorkout((v) => !v)}
+onClick={() => setOpenWorkout((v) => !v)}
               aria-haspopup="true"
               aria-expanded={openWorkout}
               className="inline-flex items-center text-sm text-gray-800 hover:text-blue-600"
@@ -170,14 +190,14 @@ export default function HeaderLogin() {
                 aria-label="Menu luyện tập"
                 className="absolute left-0 p-2 mt-2 bg-white border border-gray-200 shadow-xl top-full w-72 rounded-xl"
               >
-                <button
-                  role="menuitem"
-                  onClick={() => navigate("/exercises")}
-                  className="w-full px-3 py-2 text-left rounded-lg hover:bg-gray-50"
-                >
-                  <div className="text-sm font-semibold text-gray-900">Xem tất cả bài tập</div>
-                  <div className="text-xs text-gray-500">1000+ bài tập theo nhóm cơ</div>
-                </button>
+<button
+  role="menuitem"
+  onClick={() => navigate("/exercises")}
+  className="w-full px-3 py-2 text-left rounded-lg hover:bg-gray-50"
+>
+  <div className="text-sm font-semibold text-gray-900">Xem tất cả bài tập</div>
+  <div className="text-xs text-gray-500">1000+ bài tập theo nhóm cơ</div>
+</button>
 
                 <div className="h-px my-2 bg-gray-200" />
 
@@ -213,20 +233,23 @@ export default function HeaderLogin() {
           >
             Mô hình hoá
           </button>
-          <button
-            onClick={() => navigate("/nutrition-ai")}
-            className="text-sm text-gray-800 hover:text-blue-600"
-          >
-            Dinh dưỡng
-          </button>
+<button
+  onClick={() => secureNavigate("/nutrition-ai")}
+  className="text-sm text-gray-800 hover:text-blue-600"
+>
+  Dinh dưỡng
+</button>
 
           <div className="relative" ref={communityRef}>
-            <button
-              onClick={() => setOpenCommunity((v) => !v)}
-              aria-haspopup="true"
-              aria-expanded={openCommunity}
-              className="inline-flex items-center text-sm text-gray-800 hover:text-blue-600"
-            >
+<button
+  onClick={() => {
+if (!user) return navigate("/login", { state: { from: "/community" } });
+    setOpenCommunity((v) => !v);
+  }}
+  aria-haspopup="true"
+  aria-expanded={openCommunity}
+  className="inline-flex items-center text-sm text-gray-800 hover:text-blue-600"
+>
               Cộng đồng
               <svg className="w-4 h-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" />
@@ -241,7 +264,7 @@ export default function HeaderLogin() {
               >
                 <button
                   role="menuitem"
-                  onClick={() => navigate("/community-demo")}
+                  onClick={() => secureNavigate("/community")}
                   className="w-full px-3 py-2 text-left rounded-lg hover:bg-gray-50"
                 >
                   <div className="text-sm font-semibold text-gray-900">Gym Group</div>
@@ -577,7 +600,7 @@ export default function HeaderLogin() {
             <button className="block w-full py-2 text-left" onClick={() => navigate("/nutrition-ai")}>
               Dinh dưỡng
             </button>
-            <button className="block w-full py-2 text-left" onClick={() => navigate("/community")}>
+            <button className="block w-full py-2 text-left" onClick={() => secureNavigate("/community")}>
               Cộng đồng
             </button>
 

@@ -111,200 +111,193 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/onboarding" element={<OnboardingEntry />} />
-          <Route path="/onboarding" element={<Navigate to="/onboarding/age" replace />} />
-          <Route path="/onboarding/age" element={<OnboardingAge />} />
-          <Route path="/onboarding/body_type" element={<OnboardingBody />} />
-          <Route path="/onboarding/goal" element={<OnboardingGoal />} />
-          <Route path="/onboarding/weight" element={<OnboardingWeight />} />
-          <Route path="/onboarding/height" element={<OnboardingHeight />} />
-          <Route path="/onboarding/level_body_fat" element={<OnboardingBodyFat />} />
-          <Route path="/onboarding/experience_level" element={<OnboardingExperience />} />
-          <Route path="/onboarding/workout_frequency" element={<OnboardingFrequency />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/verify-code" element={<VerifyCode />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/onboarding" element={<OnboardingEntry />} />
+            <Route path="/onboarding" element={<Navigate to="/onboarding/age" replace />} />
+            <Route path="/onboarding/age" element={<OnboardingAge />} />
+            <Route path="/onboarding/body_type" element={<OnboardingBody />} />
+            <Route path="/onboarding/goal" element={<OnboardingGoal />} />
+            <Route path="/onboarding/weight" element={<OnboardingWeight />} />
+            <Route path="/onboarding/height" element={<OnboardingHeight />} />
+            <Route path="/onboarding/level_body_fat" element={<OnboardingBodyFat />} />
+            <Route path="/onboarding/experience_level" element={<OnboardingExperience />} />
+            <Route path="/onboarding/workout_frequency" element={<OnboardingFrequency />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/verify-code" element={<VerifyCode />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
 
-          <Route path="/" element={<Landing />} />
-          <Route path="/nutrition-ai" element={<NutritionAI />} />
-          <Route path="/nutrition-ai/personalize" element={<NutritionPersonalize />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/payment/success" element={<PaymentSuccess />} />
-          <Route path="/payment/cancel" element={<PaymentCancel />} />
+<Route path="/" element={<Landing />} />
+            <Route path="/nutrition-ai" element={<NutritionAI />} />
+            <Route path="/nutrition-ai/personalize" element={<NutritionPersonalize />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
 
-          <Route path="/modeling-demo" element={<ModelingDemo />} />
-          {/* Backward compat: redirect old preview path to new demo path */}
-          <Route path="/modeling-preview" element={<Navigate to="/modeling-demo" replace />} />
-          <Route path="/exercises-demo" element={<ExercisesDemo/>}/>
-          <Route path="/ai-guide" element={<AiTrainerGuide />} />
-          <Route
-            path="/ai"
-            element={
-              <PrivateRoute>
-                <AiTrainer />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/exercises"
-            element={
-              <PrivateRoute>
-                <Exercise />
-              </PrivateRoute>
-            }
-          />
-          <Route path="/logout" element={<Logout />} />
-          <Route
-            path="/plans/select"
-            element={
-              <PrivateRoute>
-                <PlanPicker />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/plans/:planId"
-            element={
-              <PrivateRoute>
-                <PlanDetail />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/plans/select"
-            element={
-              <PrivateRoute>
-                <PlanPicker />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/plans/new"
-            element={
-              <PrivateRoute>
-                <PlanNew />
-              </PrivateRoute>
-            }
-          />
+            <Route path="/modeling-demo" element={<ModelingDemo />} />
+            {/* Backward compat: redirect old preview path to new demo path */}
+            <Route path="/modeling-preview" element={<Navigate to="/modeling-demo" replace />} />
+            <Route path="/exercises-demo" element={<ExercisesDemo />} />
+            <Route path="/ai-guide" element={<AiTrainerGuide />} />
+            <Route
+              path="/ai"
+              element={
+                <PrivateRoute>
+                  <AiTrainer />
+                </PrivateRoute>
+              }
+            />
+<Route path="/exercises" element={<Exercise />} />
+            <Route path="/logout" element={<Logout />} />
+            <Route
+              path="/plans/select"
+              element={
+                <PrivateRoute>
+                  <PlanPicker />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/plans/:planId"
+              element={
+                <PrivateRoute>
+                  <PlanDetail />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/plans/select"
+              element={
+                <PrivateRoute>
+                  <PlanPicker />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/plans/new"
+              element={
+                <PrivateRoute>
+                  <PlanNew />
+                </PrivateRoute>
+              }
+            />
 
-          <Route
-            path="/exercises/:id"
-            element={
-                <ExerciseDetail />             
-            }
-          />
+            <Route
+              path="/exercises/:id"
+              element={
+                <ExerciseDetail />
+              }
+            />
 
-          <Route
-            path="/workout-run/:sessionId"
-            element={
-              <PrivateRoute>
-                <WorkoutRun />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/workout-run/:sessionId"
+              element={
+                <PrivateRoute>
+                  <WorkoutRun />
+                </PrivateRoute>
+              }
+            />
 
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
 
-          {/* Protected route without MainLayout (full control) */}
-          <Route
-            path="/modeling"
-            element={
-              <PrivateRoute>
-                <Modeling />
-              </PrivateRoute>
-            }
-          />
+            {/* Protected route without MainLayout (full control) */}
+            <Route
+              path="/modeling"
+              element={
+                <PrivateRoute>
+                  <Modeling />
+                </PrivateRoute>
+              }
+            />
 
-          {/* Account Routes */}
-          <Route
-            path="/account/personal-info"
-            element={
-              <PrivateRoute>
-                <PersonalInfo />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/account/change-password"
-            element={
-              <PrivateRoute>
-                <ChangePassword />
-              </PrivateRoute>
-            }
-          />
-          {/* Removed Security page */}
-          {/* Activity route removed */}
+            {/* Account Routes */}
+            <Route
+              path="/account/personal-info"
+              element={
+                <PrivateRoute>
+                  <PersonalInfo />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/account/change-password"
+              element={
+                <PrivateRoute>
+                  <ChangePassword />
+                </PrivateRoute>
+              }
+            />
+            {/* Removed Security page */}
+            {/* Activity route removed */}
 
-          {/* Profile Routes (main profile removed) */}
-          <Route
-            path="/profile/avatar"
-            element={
-              <PrivateRoute>
-                <Avatar />
-              </PrivateRoute>
-            }
-          />
+            {/* Profile Routes (main profile removed) */}
+            <Route
+              path="/profile/avatar"
+              element={
+                <PrivateRoute>
+                  <Avatar />
+                </PrivateRoute>
+              }
+            />
 
-          {/* Support Routes */}
-          <Route path="/support" element={<FAQ />} />
-          <Route path="/support/faq" element={<FAQ />} />
+            {/* Support Routes */}
+            <Route path="/support" element={<FAQ />} />
+            <Route path="/support/faq" element={<FAQ />} />
 
-          {/* Settings Routes */}
-          <Route
-            path="/settings/theme"
-            element={
-              <PrivateRoute>
-                <Theme />
-              </PrivateRoute>
-            }
-          />
+            {/* Settings Routes */}
+            <Route
+              path="/settings/theme"
+              element={
+                <PrivateRoute>
+                  <Theme />
+                </PrivateRoute>
+              }
+            />
 
 
 
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminLayout />
-              </AdminRoute>
-            }
-          >
-            <Route index element={<AdminOverview />} />
-            <Route path="user-detail" element={<AdminUserDetail />} />
-            <Route path="role" element={<Role />} />
-            <Route path="plan" element={<Plan />} />
-            <Route path="lock-unlock" element={<AdminLockUnlock />} />
-            <Route path="reset-password" element={<AdminResetPassword />} />
-            <Route path="content" element={<AdminContentManage />} />
-            <Route path="finance" element={<AdminFinancialManage />} />
-            <Route path="revenue" element={<AdminRevenue />} />
-            <Route path="popular-exercises" element={<AdminPopularExercises />} />
-            <Route path="user-plans" element={<AdminUserPlans />} />
-            <Route path="user-plans/:userId" element={<UserPlanDetails />} />
-<Route path="user-plans/:userId/plan/:planId" element={<AdminPlanDetail />} />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<AdminOverview />} />
+              <Route path="user-detail" element={<AdminUserDetail />} />
+              <Route path="role" element={<Role />} />
+              <Route path="plan" element={<Plan />} />
+              <Route path="lock-unlock" element={<AdminLockUnlock />} />
+              <Route path="reset-password" element={<AdminResetPassword />} />
+              <Route path="content" element={<AdminContentManage />} />
+              <Route path="finance" element={<AdminFinancialManage />} />
+              <Route path="revenue" element={<AdminRevenue />} />
+              <Route path="popular-exercises" element={<AdminPopularExercises />} />
+              <Route path="user-plans" element={<AdminUserPlans />} />
+              <Route path="user-plans/:userId" element={<UserPlanDetails />} />
+              <Route path="user-plans/:userId/plan/:planId" element={<AdminPlanDetail />} />
 
-            {/* Thêm route này nếu bạn dùng trang AdminUsers */}
-            <Route path="users" element={<AdminUsers />} />
-          </Route>
+              {/* Thêm route này nếu bạn dùng trang AdminUsers */}
+              <Route path="users" element={<AdminUsers />} />
+            </Route>
 
 
-          {/* Catch all: redirect based on auth status */}
-          <Route path="*" element={<NotFoundRedirect />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            {/* Catch all: redirect based on auth status */}
+            <Route path="*" element={<NotFoundRedirect />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
